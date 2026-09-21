@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const STORAGE_VERSION = 1;
 
@@ -47,16 +47,18 @@ export function parseStoredValue<T>(raw: string, initial: T): T {
 export function useLocalState<T>(key: string, initial: T): [T, (value: T | ((previous: T) => T)) => void] {
   const [value, setValue] = useState<T>(initial);
   const [loaded, setLoaded] = useState(false);
+  // `initial` costuma ser um literal novo a cada render; depender dele gera loop infinito.
+  const initialRef = useRef(initial);
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(key);
-      if (raw) setValue(parseStoredValue(raw, initial));
+      if (raw) setValue(parseStoredValue(raw, initialRef.current));
     } catch {
       // storage indisponível (aba anônima, bloqueio do navegador ou dado corrompido)
     }
     setLoaded(true);
-  }, [initial, key]);
+  }, [key]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -73,16 +75,17 @@ export function useLocalState<T>(key: string, initial: T): [T, (value: T | ((pre
 export function useSessionState<T>(key: string, initial: T): [T, (value: T | ((previous: T) => T)) => void] {
   const [value, setValue] = useState<T>(initial);
   const [loaded, setLoaded] = useState(false);
+  const initialRef = useRef(initial);
 
   useEffect(() => {
     try {
       const raw = sessionStorage.getItem(key);
-      if (raw) setValue(parseStoredValue(raw, initial));
+      if (raw) setValue(parseStoredValue(raw, initialRef.current));
     } catch {
       // storage indisponível ou sessão bloqueada
     }
     setLoaded(true);
-  }, [initial, key]);
+  }, [key]);
 
   useEffect(() => {
     if (!loaded) return;
