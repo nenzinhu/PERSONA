@@ -1,0 +1,8 @@
+﻿# Use this file in Google Colab after selecting a CUDA GPU.
+# Pin versions in a real production environment after validating the Unsloth release you use.
+unsloth
+datasets
+trl
+accelerate
+bitsandbytes
+torch
