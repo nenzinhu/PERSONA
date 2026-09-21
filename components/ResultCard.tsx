@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { humanize, type HumanizeOptions } from "@/lib/humanize";
+import { styleScore, type Fingerprint } from "@/lib/stylometry";
 import { isValidWhatsAppPhone } from "@/lib/whatsapp";
 
 interface Props {
@@ -10,9 +11,28 @@ interface Props {
   baseSeed: number;
   telefone: string;
   onSave: (text: string) => void;
+  /** Seu fingerprint; sem ele (poucos exemplos) não há nota. */
+  meuJeito: Fingerprint | null;
+  onShown: (text: string) => void;
+  preferState: "hidden" | "open" | "chosen" | "lost";
+  onPrefer: (clean: string) => void;
 }
 
-export default function ResultCard({ raw, opts, baseSeed, telefone, onSave }: Props) {
+function scoreClass(score: number) {
+  return score >= 70 ? "score good" : score >= 40 ? "score mid" : "score bad";
+}
+
+export default function ResultCard({
+  raw,
+  opts,
+  baseSeed,
+  telefone,
+  onSave,
+  meuJeito,
+  onShown,
+  preferState,
+  onPrefer,
+}: Props) {
   const [seed, setSeed] = useState(baseSeed * 7919);
   const [edited, setEdited] = useState<string | null>(null);
   const [showRaw, setShowRaw] = useState(false);
@@ -29,6 +49,11 @@ export default function ResultCard({ raw, opts, baseSeed, telefone, onSave }: Pr
   );
 
   const text = edited ?? humanize(raw, { ...opts, seed });
+  const nota = useMemo(() => (meuJeito ? styleScore(text, meuJeito) : null), [text, meuJeito]);
+  // Versão sem erros de digitação: é a que vira exemplo, para o modelo não aprender typo falso.
+  const clean = () => edited ?? humanize(raw, { ...opts, typoRate: 0, seed });
+
+  useEffect(() => onShown(text), [text, onShown]);
 
   function notify(message: string) {
     setFlash(message);
@@ -68,7 +93,19 @@ export default function ResultCard({ raw, opts, baseSeed, telefone, onSave }: Pr
   }
 
   return (
-    <article className="bubble-card">
+    <article className={preferState === "chosen" ? "bubble-card chosen" : "bubble-card"}>
+      <div className="card-meta">
+        {nota ? (
+          <span className={scoreClass(nota.score)} title={nota.hints.join(" · ") || "Bem no seu jeito"}>
+            parece você: <b>{nota.score}</b>
+          </span>
+        ) : (
+          <span className="score none">nota: adicione exemplos</span>
+        )}
+        {nota && nota.score < 70 && nota.hints.length > 0 && (
+          <span className="muted small">{nota.hints.join(" · ")}</span>
+        )}
+      </div>
       <textarea
         className="bubble"
         value={text}
@@ -78,6 +115,20 @@ export default function ResultCard({ raw, opts, baseSeed, telefone, onSave }: Pr
       />
       {showRaw && <p className="raw">{raw}</p>}
       <div className="actions">
+        {preferState !== "hidden" && (
+          <button
+            className={preferState === "chosen" ? "act prefer on" : "act prefer"}
+            disabled={preferState !== "open"}
+            aria-pressed={preferState === "chosen"}
+            title="Guarda sua escolha para o modelo aprender o seu gosto"
+            onClick={() => {
+              onPrefer(clean());
+              notify("Escolha salva");
+            }}
+          >
+            {preferState === "chosen" ? "👍 Preferida" : "👍 Prefiro esta"}
+          </button>
+        )}
         <button className="act wa" onClick={whatsapp}>
           WhatsApp
         </button>
@@ -105,7 +156,7 @@ export default function ResultCard({ raw, opts, baseSeed, telefone, onSave }: Pr
         <button
           className="act ghost"
           onClick={() => {
-            onSave(edited ?? humanize(raw, { ...opts, typoRate: 0, seed }));
+            onSave(clean());
             notify("Salvo nos seus exemplos");
           }}
         >

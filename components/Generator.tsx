@@ -5,6 +5,8 @@ import type { Mode, Stance, StyleProfile } from "@/lib/prompt";
 import { TEXT_KINDS, recommend, type ProviderId } from "@/lib/providers";
 import { MAX_TRAITS, NEGATIVE_TRAITS, POSITIVE_TRAITS } from "@/lib/traits";
 import { useLocalState } from "@/lib/store";
+import { MIN_EXAMPLES, calibrate, fingerprint } from "@/lib/stylometry";
+import type { Preference } from "@/lib/dataset";
 import type { GeneratedHistoryItem, ProviderStatus, Settings } from "@/lib/types";
 import ResultCard from "./ResultCard";
 
@@ -41,9 +43,20 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
   const [error, setError] = useState("");
   const [result, setResult] = useState<Result | null>(null);
   const [history, setHistory] = useLocalState<GeneratedHistoryItem[]>("history", []);
+  const [, setPreferencias] = useLocalState<Preference[]>("preferencias", []);
+  const [preferred, setPreferred] = useState<number | null>(null);
+  const [calibrado, setCalibrado] = useState("");
   const abortRef = useRef<AbortController | null>(null);
+  // Texto que cada card está mostrando agora (após embaralhar/editar), para o par do teste A/B.
+  const shownRef = useRef<string[]>([]);
+
+  const meuJeito = useMemo(
+    () => (perfil.exemplos.length >= MIN_EXAMPLES ? fingerprint(perfil.exemplos.map((e) => e.resposta)) : null),
+    [perfil.exemplos],
+  );
 
   useEffect(() => () => abortRef.current?.abort(), []);
+  useEffect(() => setPreferred(null), [result]);
 
   const set = <K extends keyof Settings>(key: K, value: Settings[K]) =>
     setSettings((current) => ({ ...current, [key]: value }));
@@ -121,6 +134,35 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
   function salvarExemplo(resposta: string) {
     if (!result) return;
     setPerfil((current) => ({ ...current, exemplos: [...current.exemplos, { contexto: result.texto, resposta }] }));
+  }
+
+  function calibrar() {
+    if (!meuJeito) return;
+    const c = calibrate(meuJeito);
+    setSettings((current) => ({ ...current, emoji: c.emoji, humanize: { ...current.humanize, ...c.humanize } }));
+    const partes = [
+      c.humanize.abbreviation !== undefined && `${c.humanize.abbreviation}% abreviação`,
+      c.humanize.typoRate !== undefined && `${c.humanize.typoRate}% erro`,
+      c.humanize.casual !== undefined && (c.humanize.casual ? "sem ponto final" : "com ponto final"),
+      c.emoji && "com emoji",
+    ].filter(Boolean);
+    setCalibrado(`Calibrado com ${meuJeito.samples} exemplos: ${partes.join(", ") || "nada mensurável ainda"}.`);
+  }
+
+  function preferir(index: number, clean: string) {
+    if (!result || preferred !== null) return;
+    const chosen = shownRef.current[index] ?? clean;
+    const pares: Preference[] = result.variations
+      .map((_, i) => shownRef.current[i])
+      .filter((rejected, i): rejected is string => i !== index && Boolean(rejected) && rejected !== chosen)
+      .map((rejected) => ({ contexto: result.texto, chosen, rejected }));
+    setPreferencias((items) => [...pares, ...items].slice(0, 200));
+    setPerfil((current) =>
+      current.exemplos.some((e) => e.contexto === result.texto && e.resposta === clean)
+        ? current
+        : { ...current, exemplos: [...current.exemplos, { contexto: result.texto, resposta: clean }] },
+    );
+    setPreferred(index);
   }
 
   const h = settings.humanize;
@@ -255,6 +297,19 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
 
         <details className="more" open>
           <summary>Parecer que fui eu</summary>
+          <div className="calibrate">
+            <button
+              className="act"
+              onClick={calibrar}
+              disabled={!meuJeito}
+              title={meuJeito ? "Ajusta os controles medindo os seus exemplos" : undefined}
+            >
+              Calibrar pelo meu jeito
+            </button>
+            <span className="muted small" role="status">
+              {meuJeito ? calibrado : `Precisa de ${MIN_EXAMPLES} exemplos seus (tem ${perfil.exemplos.length}).`}
+            </span>
+          </div>
           <label className="slider">
             <span>
               Abreviações (vc, pq, tb) <b>{h.abbreviation}%</b>
@@ -401,6 +456,20 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
                 baseSeed={index + 1}
                 telefone={settings.telefone}
                 onSave={salvarExemplo}
+                meuJeito={meuJeito}
+                onShown={(shown) => {
+                  shownRef.current[index] = shown;
+                }}
+                preferState={
+                  result.variations.length < 2
+                    ? "hidden"
+                    : preferred === null
+                      ? "open"
+                      : preferred === index
+                        ? "chosen"
+                        : "lost"
+                }
+                onPrefer={(clean) => preferir(index, clean)}
               />
             ))}
             <label className="field">

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseDataset } from "../lib/dataset.ts";
+import { parseDataset, toDpoJsonl } from "../lib/dataset.ts";
 
 test("normaliza e limita exemplos importados", () => {
   const examples = parseDataset(
@@ -38,4 +38,15 @@ test("ignora mensagens sem conteúdo utilizável", () => {
     ),
     [],
   );
+});
+
+test("toDpoJsonl gera um par escolhida × rejeitada por linha", () => {
+  const out = toDpoJsonl([
+    { contexto: " vai hoje? ", chosen: "vo sim", rejected: "Sim, eu irei." },
+    { contexto: "", chosen: "x", rejected: "y" },
+    { contexto: "e ai", chosen: "igual", rejected: "igual" },
+  ]);
+  const lines = out.split("\n");
+  assert.equal(lines.length, 1);
+  assert.deepEqual(JSON.parse(lines[0]!), { prompt: "vai hoje?", chosen: "vo sim", rejected: "Sim, eu irei." });
 });

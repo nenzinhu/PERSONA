@@ -19,6 +19,22 @@ export function toJsonl(perfil: StyleProfile): string {
     .join("\n");
 }
 
+/** Escolha do teste A/B: a resposta preferida e a que perdeu, para a mesma mensagem. */
+export interface Preference {
+  contexto: string;
+  chosen: string;
+  rejected: string;
+}
+
+/** Formato de preferência {prompt, chosen, rejected} (DPO/ORPO no HF TRL e Unsloth). */
+export function toDpoJsonl(preferencias: Preference[]): string {
+  return preferencias
+    .map((p) => ({ prompt: p.contexto.trim(), chosen: p.chosen.trim(), rejected: p.rejected.trim() }))
+    .filter((p) => p.prompt && p.chosen && p.rejected && p.chosen !== p.rejected)
+    .map((p) => JSON.stringify(p))
+    .join("\n");
+}
+
 /** Aceita JSON de backup ({exemplos: [...]}), array de exemplos ou JSONL no formato messages. */
 export function parseDataset(raw: string): StyleExample[] {
   const text = raw.trim();

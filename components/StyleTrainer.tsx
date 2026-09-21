@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { parseDataset, toJsonl } from "@/lib/dataset";
+import { parseDataset, toDpoJsonl, toJsonl, type Preference } from "@/lib/dataset";
+import { useLocalState } from "@/lib/store";
 import { MAX_EXAMPLES, type StyleProfile } from "@/lib/prompt";
 import { listSenders, parseWhatsAppExport, toExamples, type ChatMessage } from "@/lib/whatsapp";
 
@@ -39,6 +40,7 @@ export default function StyleTrainer({ perfil, setPerfil }: Props) {
   const [chat, setChat] = useState<ChatMessage[] | null>(null);
   const [me, setMe] = useState("");
   const [msg, setMsg] = useState("");
+  const [preferencias] = useLocalState<Preference[]>("preferencias", []);
 
   const senders = chat ? listSenders(chat) : [];
   const preview = chat && me ? toExamples(chat, me) : [];
@@ -180,6 +182,14 @@ export default function StyleTrainer({ perfil, setPerfil }: Props) {
             onClick={() => download("meu-estilo.jsonl", toJsonl(perfil), "application/jsonl")}
           >
             Baixar JSONL (fine-tune)
+          </button>
+          <button
+            className="act"
+            disabled={!preferencias.length}
+            title="Pares escolhida × rejeitada do botão 👍 Prefiro esta"
+            onClick={() => download("minhas-preferencias.jsonl", toDpoJsonl(preferencias), "application/jsonl")}
+          >
+            Exportar DPO ({preferencias.length} {preferencias.length === 1 ? "preferência" : "preferências"})
           </button>
           <button
             className="act"
