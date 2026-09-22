@@ -2,6 +2,7 @@ import { z } from "zod";
 import { sanitizeTraits } from "./traits.ts";
 import { MAX_EXAMPLES } from "./prompt.ts";
 import { MAX_TRAITS } from "./traits.ts";
+import { MAX_CONVERSATION } from "./whatsapp.ts";
 import type { Mode, Stance } from "./prompt.ts";
 import type { ProviderId, TextKind } from "./providers.ts";
 
@@ -90,6 +91,57 @@ export function normalizeGenerateRequest(data: GenerateRequest) {
     tracos: sanitizeTraits(data.tracos),
     emoji: data.emoji,
     variacoes: data.variacoes,
+    perfil: {
+      nome: data.perfil.nome,
+      descricao: data.perfil.descricao,
+      exemplos: data.perfil.exemplos,
+    },
+    provider: data.provider satisfies "auto" | ProviderId,
+    model: data.model,
+    temperature: data.temperature,
+  };
+}
+
+export const conversaRequestSchema = z
+  .object({
+    mensagens: z
+      .array(
+        z.object({
+          eu: z.boolean(),
+          nome: z.string().trim().max(80).default(""),
+          texto: z.string().trim().min(1).max(1000),
+        }),
+      )
+      .min(1, "Cole a conversa.")
+      .max(MAX_CONVERSATION, `Use no máximo ${MAX_CONVERSATION} mensagens.`)
+      .refine((items) => items.some((item) => !item.eu), "A conversa precisa ter mensagem da outra pessoa."),
+    objetivo: optionalText(300).default(""),
+    kind: z.enum(["casual", "argumento", "persona", "formal"]).default("casual"),
+    tracos: z.array(z.string().trim().max(100)).max(MAX_TRAITS).default([]),
+    emoji: z.boolean().default(false),
+    perfil: profileSchema,
+    provider: providerEnum.default("auto"),
+    model: optionalText(200).default(""),
+    temperature: z.preprocess(
+      (value) => (value === null || value === "" ? undefined : value),
+      z.coerce.number().min(0).max(1.5).default(0.9),
+    ),
+  })
+  .strip();
+
+export type ConversaRequest = z.infer<typeof conversaRequestSchema>;
+
+export function parseConversaRequest(raw: unknown) {
+  return conversaRequestSchema.safeParse(raw);
+}
+
+export function normalizeConversaRequest(data: ConversaRequest) {
+  return {
+    mensagens: data.mensagens,
+    objetivo: data.objetivo,
+    kind: data.kind satisfies TextKind,
+    tracos: sanitizeTraits(data.tracos),
+    emoji: data.emoji,
     perfil: {
       nome: data.perfil.nome,
       descricao: data.perfil.descricao,

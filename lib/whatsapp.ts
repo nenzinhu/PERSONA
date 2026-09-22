@@ -7,6 +7,16 @@ const LINE_PATTERNS = [
   /^\[?(\d{1,2}\/\d{1,2}\/\d{2,4}),?\s+(\d{1,2}:\d{2}:\d{2}\s?(?:AM|PM)),?\]?\s*(?:-\s*)?([^:]{1,80}):\s?(.*)$/i,
 ];
 
+// Mensagens copiadas no app (segurar → Copiar): "[21:03, 21/09/2026] Ana: texto" (hora antes da data).
+const COPIED_PATTERN =
+  /^\[(\d{1,2}:\d{2})(?::\d{2})?(?:\s?[AP]M)?,\s*(\d{1,2}\/\d{1,2}\/\d{2,4}|\d{4}-\d{1,2}-\d{1,2})\]\s*([^:]{1,80}):\s?(.*)$/i;
+// "Ana: texto" digitado à mão. O nome precisa parecer nome (maiúscula ou telefone, até 4 palavras)
+// para não confundir com frases como "o horário é: 20h".
+const SIMPLE_PATTERN = /^()()((?:\p{Lu}|\+?\d)[^:.!?]{0,39}):\s?(.*)$/u;
+
+/** Máximo de mensagens enviadas ao modo agente (as mais recentes). */
+export const MAX_CONVERSATION = 40;
+
 const SKIP =
   /^(?:<(mídia oculta|media omitted)>|mensagem apagada|this message was deleted|arquivo anexado|attached file|‎)\s*$/i;
 
@@ -15,22 +25,32 @@ export interface ChatMessage {
   text: string;
 }
 
-function parseMessageLine(line: string): ChatMessage | null {
-  for (const pattern of LINE_PATTERNS) {
+function parseMessageLine(line: string, patterns: RegExp[]): ChatMessage | null {
+  for (const pattern of patterns) {
     const match = line.match(pattern);
     if (!match) continue;
     const from = match[3].trim();
     const text = match[4].trim();
     if (!from || !text) return null;
+    if (pattern === SIMPLE_PATTERN && from.split(/\s+/).length > 4) return null;
     return { from, text };
   }
   return null;
 }
 
 export function parseWhatsAppExport(raw: string): ChatMessage[] {
+  return parseLines(raw, LINE_PATTERNS);
+}
+
+/** Trecho colado no modo agente: mensagens copiadas, formato exportado ou "Nome: texto". */
+export function parseConversation(raw: string): ChatMessage[] {
+  return parseLines(raw, [COPIED_PATTERN, ...LINE_PATTERNS, SIMPLE_PATTERN]);
+}
+
+function parseLines(raw: string, patterns: RegExp[]): ChatMessage[] {
   const out: ChatMessage[] = [];
   for (const line of raw.replace(/\r/g, "").split("\n")) {
-    const message = parseMessageLine(line);
+    const message = parseMessageLine(line, patterns);
     if (message) {
       out.push(message);
     } else if (out.length && line.trim()) {

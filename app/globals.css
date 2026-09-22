@@ -659,3 +659,28 @@ code {
   background: var(--accent);
   color: var(--accent-ink);
 }
+
+/* Aba Conversa (modo agente) */
+.plan {
+  background: var(--accent-soft);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin: 0 0 10px;
+}
+.replies-title {
+  font-size: 14px;
+  margin: 18px 0 8px;
+  color: var(--muted);
+}
+.reply {
+  margin-bottom: 14px;
+}
+.reply .them {
+  background: var(--them);
+  color: var(--ink);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  margin: 0 0 6px;
+  max-width: 85%;
+  white-space: pre-wrap;
+}

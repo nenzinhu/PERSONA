@@ -4,15 +4,17 @@ import { useEffect, useState } from "react";
 import Generator from "@/components/Generator";
 import StyleTrainer from "@/components/StyleTrainer";
 import ModelGuide from "@/components/ModelGuide";
+import Conversation from "@/components/Conversation";
 import { useLocalState, useSessionState } from "@/lib/store";
 import { DEFAULT_PROFILE, DEFAULT_SETTINGS, type ProviderStatus } from "@/lib/types";
 
-type Tab = "pergunta" | "afirmacao" | "estilo" | "modelos";
+type Tab = "pergunta" | "afirmacao" | "conversa" | "estilo" | "modelos";
 type Theme = "system" | "light" | "dark";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "pergunta", label: "Pergunta" },
   { id: "afirmacao", label: "Afirmação" },
+  { id: "conversa", label: "Conversa" },
   { id: "estilo", label: "Meu estilo" },
   { id: "modelos", label: "Modelos" },
 ];
@@ -141,6 +143,9 @@ export default function Home() {
           providers={providers}
           senha={senha.v}
         />
+      )}
+      {tab.v === "conversa" && (
+        <Conversation settings={settings} perfil={perfil} setPerfil={setPerfil} senha={senha.v} />
       )}
       {tab.v === "estilo" && <StyleTrainer perfil={perfil} setPerfil={setPerfil} />}
       {tab.v === "modelos" && (
