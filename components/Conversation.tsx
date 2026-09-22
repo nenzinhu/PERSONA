@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { AgentOutput, StyleProfile } from "@/lib/prompt";
+import { profileForRequest, type AgentOutput, type StyleProfile } from "@/lib/prompt";
 import { useLocalState } from "@/lib/store";
 import { MIN_EXAMPLES, fingerprint } from "@/lib/stylometry";
 import type { Settings } from "@/lib/types";
@@ -71,7 +71,7 @@ export default function Conversation({ settings, perfil, setPerfil, senha }: Pro
           kind: settings.kind,
           tracos: settings.tracos,
           emoji: settings.emoji,
-          perfil,
+          perfil: profileForRequest(perfil),
           provider: settings.provider,
           model: settings.model,
           temperature: settings.temperatura,
@@ -91,7 +91,11 @@ export default function Conversation({ settings, perfil, setPerfil, senha }: Pro
 
   function salvarExemplo(contexto: string) {
     return (resposta: string) =>
-      setPerfil((current) => ({ ...current, exemplos: [...current.exemplos, { contexto, resposta }] }));
+      setPerfil((current) =>
+        current.exemplos.some((e) => e.contexto === contexto && e.resposta === resposta)
+          ? current
+          : { ...current, exemplos: [...current.exemplos, { contexto, resposta }] },
+      );
   }
 
   const card = (raw: string, seed: number, contexto: string) => (

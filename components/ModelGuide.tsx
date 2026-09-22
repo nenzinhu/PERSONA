@@ -1,6 +1,6 @@
 "use client";
 
-import { PROVIDERS, TEXT_KINDS, recommend, type TextKind } from "@/lib/providers";
+import { PROVIDERS, TEXT_KINDS, rankModels, recommend, type TextKind } from "@/lib/providers";
 import type { ProviderStatus, Settings } from "@/lib/types";
 
 interface Props {
@@ -24,6 +24,7 @@ const WHY: Record<TextKind, string> = {
 export default function ModelGuide({ providers, settings, setSettings, goTo }: Props) {
   const all = PROVIDERS.map((p) => ({ id: p.id, models: providers.find((x) => x.id === p.id)?.models ?? p.models }));
   const configured = new Set(providers.filter((p) => p.configured).map((p) => p.id));
+  const modelsOf = (id: string) => all.find((p) => p.id === id)?.models ?? [];
 
   function use(kind: TextKind, provider: string, model: string) {
     setSettings((s) => ({ ...s, kind, provider: provider as Settings["provider"], model }));
@@ -70,6 +71,10 @@ export default function ModelGuide({ providers, settings, setSettings, goTo }: P
 
       <div className="card">
         <h2>Provedores</h2>
+        <p className="muted small">
+          Estrelas para o tipo atual ({TEXT_KINDS.find((k) => k.id === settings.kind)?.label}). Abra &quot;Modelos&quot;
+          para escolher um específico.
+        </p>
         <ul className="providers">
           {PROVIDERS.map((p) => (
             <li key={p.id}>
@@ -83,6 +88,33 @@ export default function ModelGuide({ providers, settings, setSettings, goTo }: P
                   {p.envKey}
                   {p.envBaseUrl ? ` + ${p.envBaseUrl}` : ""}
                 </code>
+                {modelsOf(p.id).length > 0 && (
+                  <details className="more">
+                    <summary>Modelos ({modelsOf(p.id).length})</summary>
+                    <ol className="rank">
+                      {rankModels(settings.kind, modelsOf(p.id)).map((m) => {
+                        const active = settings.provider === p.id && settings.model === m.id;
+                        return (
+                          <li key={m.id}>
+                            <span>
+                              {m.label} <small className="muted">{"★".repeat(m.scores[settings.kind])}</small>
+                              <small className="muted"> · {m.note}</small>
+                            </span>
+                            {!configured.has(p.id) ? (
+                              <small className="muted">sem chave</small>
+                            ) : active ? (
+                              <small className="ok">em uso</small>
+                            ) : (
+                              <button className="act" onClick={() => use(settings.kind, p.id, m.id)}>
+                                Usar
+                              </button>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ol>
+                  </details>
+                )}
               </div>
               {p.site && (
                 <a href={p.site} target="_blank" rel="noreferrer" className="act">

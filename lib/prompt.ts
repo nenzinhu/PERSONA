@@ -44,6 +44,11 @@ const STANCE_RULES: Record<Stance, string> = {
 
 export const MAX_EXAMPLES = 20;
 
+/** Perfil enviado à API: só os exemplos mais recentes cabem no limite do servidor. */
+export function profileForRequest(perfil: StyleProfile): StyleProfile {
+  return { ...perfil, exemplos: perfil.exemplos.slice(-MAX_EXAMPLES) };
+}
+
 function sanitizePromptData(value: string, max: number) {
   const cleaned = Array.from(value)
     .filter((character) => {

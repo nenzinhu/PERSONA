@@ -1,7 +1,15 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { chatWithRetry, isConfigured, ProviderError } from "./llm.ts";
-import { getProvider, modelsFor, PROVIDERS, recommend, type ProviderId, type TextKind } from "./providers.ts";
+import {
+  getProvider,
+  modelsFor,
+  PROVIDERS,
+  rankModels,
+  recommend,
+  type ProviderId,
+  type TextKind,
+} from "./providers.ts";
 import { checkRateLimitKey, rateLimitConfigFromEnv, rateLimitKeyFromRequest } from "./rateLimit.ts";
 
 // Fluxo comum às rotas que chamam a IA (/api/generate e /api/conversa):
@@ -99,7 +107,7 @@ export async function runGeneration<I extends GenerationInput>(
     const provider = getProvider(input.provider);
     if (!provider) return NextResponse.json({ error: "Provedor desconhecido." }, { status: 400, headers });
     const providerModels = modelsFor(provider, env);
-    const model = input.model || providerModels[0]?.id;
+    const model = input.model || rankModels(input.kind, providerModels)[0]?.id;
     if (!model)
       return NextResponse.json({ error: `Informe o id do modelo para ${provider.label}.` }, { status: 400, headers });
     if (provider.id !== "custom" && !providerModels.some((candidate) => candidate.id === model)) {

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Mode, Stance, StyleProfile } from "@/lib/prompt";
-import { TEXT_KINDS, recommend, type ProviderId } from "@/lib/providers";
+import { profileForRequest, type Mode, type Stance, type StyleProfile } from "@/lib/prompt";
+import { TEXT_KINDS, rankModels, recommend, type ProviderId } from "@/lib/providers";
 import { MAX_TRAITS, NEGATIVE_TRAITS, POSITIVE_TRAITS } from "@/lib/traits";
 import { useLocalState } from "@/lib/store";
 import { MIN_EXAMPLES, calibrate, fingerprint } from "@/lib/stylometry";
@@ -66,6 +66,20 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
   const configured = providers.filter((provider) => provider.configured);
   const best = useMemo(() => recommend(settings.kind, configured)[0], [settings.kind, configured]);
   const currentProvider = providers.find((provider) => provider.id === settings.provider);
+  const rankedModels = useMemo(
+    () => rankModels(settings.kind, currentProvider?.models ?? []),
+    [settings.kind, currentProvider],
+  );
+  const selectedModel = rankedModels.find((model) => model.id === settings.model) ?? rankedModels[0];
+  const kindLabel = TEXT_KINDS.find((kind) => kind.id === settings.kind)?.label.toLowerCase() ?? settings.kind;
+
+  // Modelo salvo que saiu do catálogo (ou do *_MODELS) seria recusado pelo servidor: volta para o melhor.
+  useEffect(() => {
+    if (!currentProvider || settings.provider === "custom" || !settings.model) return;
+    if (!currentProvider.models.some((model) => model.id === settings.model)) {
+      setSettings((current) => ({ ...current, model: "" }));
+    }
+  }, [currentProvider, settings.provider, settings.model, setSettings]);
 
   function toggleTrait(trait: string) {
     setSettings((current) => {
@@ -95,7 +109,7 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
           tracos: settings.tracos,
           emoji: settings.emoji,
           variacoes: settings.variacoes,
-          perfil,
+          perfil: profileForRequest(perfil),
           provider: settings.provider,
           model: settings.model,
           temperature: settings.temperatura,
@@ -248,22 +262,40 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
               ))}
             </select>
           </label>
-          {settings.provider !== "auto" && (
+          {settings.provider === "custom" && (
             <label className="field">
               <span>Modelo</span>
               <input
-                list={`models-${settings.provider}`}
+                list="models-custom"
                 value={settings.model}
                 onChange={(event) => set("model", event.target.value)}
-                placeholder={currentProvider?.models[0]?.id ?? "id do modelo"}
+                placeholder={rankedModels[0]?.id ?? "id do modelo"}
               />
-              <datalist id={`models-${settings.provider}`}>
-                {currentProvider?.models.map((model) => (
+              <datalist id="models-custom">
+                {rankedModels.map((model) => (
                   <option key={model.id} value={model.id}>
                     {model.label}
                   </option>
                 ))}
               </datalist>
+            </label>
+          )}
+          {settings.provider !== "auto" && settings.provider !== "custom" && (
+            <label className="field">
+              <span>Modelo</span>
+              <select value={settings.model} onChange={(event) => set("model", event.target.value)}>
+                <option value="">
+                  Melhor para {kindLabel}
+                  {rankedModels[0] ? `: ${rankedModels[0].label}` : ""}
+                </option>
+                {rankedModels.map((model) => (
+                  <option key={model.id} value={model.id}>
+                    {model.label} · {"★".repeat(model.scores[settings.kind])}
+                    {model.speed === 3 ? " · rápido" : ""}
+                  </option>
+                ))}
+              </select>
+              {selectedModel && <small className="muted">{selectedModel.note}</small>}
             </label>
           )}
         </div>

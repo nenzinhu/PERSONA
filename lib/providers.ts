@@ -395,6 +395,11 @@ export interface Recommendation {
 }
 
 /** Ordena modelos disponíveis (com chave) pelo tipo de texto; empate → mais rápido. */
+/** Modelos de um provedor do melhor para o pior no tipo de texto (nota, depois velocidade). */
+export function rankModels(kind: TextKind, models: ModelInfo[]): ModelInfo[] {
+  return [...models].sort((a, b) => b.scores[kind] * 10 + b.speed - (a.scores[kind] * 10 + a.speed));
+}
+
 export function recommend(kind: TextKind, available: { id: ProviderId; models: ModelInfo[] }[]): Recommendation[] {
   const out: Recommendation[] = [];
   for (const p of available) {
