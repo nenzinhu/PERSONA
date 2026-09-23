@@ -66,18 +66,21 @@ cp .env.example .env.local   # preencha ao menos GROQ_API_KEY
 npm run dev
 ```
 
-Testes do humanizador e do importador do WhatsApp: `npm test`.
+Testes (humanizador, WhatsApp, prompts, validação, provedores e rotas novas): `npm test`. Precisa de Node 22.6 ou mais novo.
 
 ## GitHub + Vercel
 
+O código fica em [github.com/nenzinhu/PERSONA](https://github.com/nenzinhu/PERSONA) (branch `main`). Para baixar e publicar alterações:
+
 ```bash
-git init
+git clone https://github.com/nenzinhu/PERSONA.git
+cd PERSONA
 git add .
-git commit -m "Gerador de respostas"
-gh repo create gerador-respostas --private --source . --push
+git commit -m "descreva a mudança"
+git push origin main
 ```
 
-1. Vercel → **Add New Project** → importe o repositório (framework detectado: Next.js).
+1. Vercel → **Add New Project** → importe o repositório `PERSONA` (framework detectado: Next.js). Cada push na `main` publica sozinho.
 2. **Settings → Environment Variables**: cadastre as chaves de `.env.example` que for usar.
 3. **Settings → Domains**: adicione seu domínio.
 4. Recomendado em domínio público: defina `APP_PASSWORD` para que estranhos não gastem sua cota.
@@ -122,7 +125,7 @@ npm test
 npm run build
 ```
 
-A CI em `.github/workflows/ci.yml` executa checagem de ambiente, TypeScript, ESLint, testes e build. O formatador configurado é o Prettier.
+A CI em `.github/workflows/ci.yml` (Node 22) executa checagem de ambiente, TypeScript, ESLint, formatação (Prettier), testes e build.
 
 ## Arquitetura
 

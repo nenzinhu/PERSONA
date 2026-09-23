@@ -53,7 +53,9 @@ Colar um trecho de conversa do WhatsApp, dizer (opcionalmente) o que quer alcan�
 
 ## Testes
 
-- `tests/whatsapp.test.ts`: formato copiado, várias linhas, `Nome: texto` e corte.
-- `tests/prompt.test.ts`: `buildConversationMessages` (blocos, "Você:", objetivo) e `parseAgentOutput` (completo, variações de título, sem títulos, réplica incompleta).
-- `tests/validation.test.ts`: o schema da conversa.
+Todos em `tests/conversa.test.ts`:
+
+- `parseConversation`: formato copiado, várias linhas, `Nome: texto` e corte.
+- `buildConversationMessages` (blocos, "Você:", objetivo) e `parseAgentOutput` (completo, variações de título, sem títulos, réplica incompleta).
+- `parseConversaRequest`: o schema da conversa.
 - Verificação no navegador com a resposta da API simulada, e build de produção.
