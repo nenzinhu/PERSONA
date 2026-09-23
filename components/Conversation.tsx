@@ -6,6 +6,8 @@ import { useLocalState } from "@/lib/store";
 import { MIN_EXAMPLES, fingerprint } from "@/lib/stylometry";
 import type { Settings } from "@/lib/types";
 import { MAX_CONVERSATION, listSenders, parseConversation } from "@/lib/whatsapp";
+import { requestTone } from "@/lib/api";
+import MessageReading from "./MessageReading";
 import ResultCard from "./ResultCard";
 
 interface Props {
@@ -110,8 +112,17 @@ export default function Conversation({ settings, perfil, setPerfil, senha }: Pro
       onShown={noop}
       preferState="hidden"
       onPrefer={noop}
+      onTone={(tom, atual) => requestTone({ tom, texto: atual, contexto, settings, perfil, senha })}
     />
   );
+
+  // Última mensagem da outra pessoa e o que veio antes, para "Ler a mensagem".
+  const ultimaIndex = recentes.findLastIndex((m) => m.from !== souEu);
+  const ultimaDeles = ultimaIndex >= 0 ? recentes[ultimaIndex].text : "";
+  const antes = recentes
+    .slice(Math.max(0, ultimaIndex - 10), Math.max(0, ultimaIndex))
+    .map((m) => `${m.from === souEu ? "Você" : m.from}: ${m.text}`)
+    .join("\n");
 
   return (
     <section className="grid">
@@ -152,6 +163,9 @@ export default function Conversation({ settings, perfil, setPerfil, senha }: Pro
               {remetentes.length === 1 && " Só achei um remetente."}
             </small>
           </div>
+        )}
+        {souEu && ultimaDeles && (
+          <MessageReading texto={ultimaDeles} contexto={antes} settings={settings} senha={senha} />
         )}
 
         <label className="field">

@@ -675,6 +675,50 @@ code {
 .reply {
   margin-bottom: 14px;
 }
+
+.tones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.act.tone {
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  background: transparent;
+}
+
+.reading {
+  margin: 4px 0 12px;
+}
+.reading-card {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--warn-soft);
+  display: grid;
+  gap: 6px;
+}
+.reading-card div {
+  display: grid;
+  grid-template-columns: 7.5em 1fr;
+  gap: 8px;
+}
+.reading-card dt {
+  font-weight: 700;
+  color: var(--warn);
+  font-size: 0.84rem;
+}
+.reading-card dd {
+  margin: 0;
+  font-size: 0.9rem;
+}
+@media (max-width: 480px) {
+  .reading-card div {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
 .reply .them {
   background: var(--them);
   color: var(--ink);

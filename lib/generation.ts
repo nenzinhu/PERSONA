@@ -56,27 +56,44 @@ export interface GenerationSpec<I extends GenerationInput> {
   shape: (raw: string, input: I) => Record<string, unknown>;
 }
 
-export async function runGeneration<I extends GenerationInput>(
-  req: Request,
-  spec: GenerationSpec<I>,
-): Promise<NextResponse> {
+/** Senha do app + rate limit, comuns a todas as rotas que gastam cota de provedor. */
+export function guard(req: Request): { ok: true; headers: Headers } | { ok: false; response: NextResponse } {
   const env = process.env;
   if (!passwordMatches(req.headers.get("x-app-password"), env.APP_PASSWORD)) {
-    return NextResponse.json(
-      { error: "Senha do app incorreta." },
-      { status: 401, headers: { "cache-control": "no-store" } },
-    );
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: "Senha do app incorreta." },
+        { status: 401, headers: { "cache-control": "no-store" } },
+      ),
+    };
   }
 
   const rate = checkRateLimitKey(rateLimitKeyFromRequest(req), rateLimitConfigFromEnv(env));
   const headers = rateHeaders(rate);
   if (!rate.allowed) {
     headers.set("retry-after", String(rate.resetInSeconds));
-    return NextResponse.json(
-      { error: "Limite de tentativas atingido. Tente novamente em alguns instantes." },
-      { status: 429, headers },
-    );
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: "Limite de tentativas atingido. Tente novamente em alguns instantes." },
+        { status: 429, headers },
+      ),
+    };
   }
+  return { ok: true, headers };
+}
+
+export { publicProviderError };
+
+export async function runGeneration<I extends GenerationInput>(
+  req: Request,
+  spec: GenerationSpec<I>,
+): Promise<NextResponse> {
+  const env = process.env;
+  const guarded = guard(req);
+  if (!guarded.ok) return guarded.response;
+  const { headers } = guarded;
 
   let rawBody: unknown;
   try {

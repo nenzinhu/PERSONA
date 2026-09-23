@@ -3,6 +3,7 @@ import { sanitizeTraits } from "./traits.ts";
 import { MAX_EXAMPLES } from "./prompt.ts";
 import { MAX_TRAITS } from "./traits.ts";
 import { MAX_CONVERSATION } from "./whatsapp.ts";
+import { TONES } from "./adjust.ts";
 import type { Mode, Stance } from "./prompt.ts";
 import type { ProviderId, TextKind } from "./providers.ts";
 
@@ -100,6 +101,53 @@ export function normalizeGenerateRequest(data: GenerateRequest) {
     model: data.model,
     temperature: data.temperature,
   };
+}
+
+const kindSchema = z.enum(["casual", "argumento", "persona", "formal"]).default("casual");
+const temperatureSchema = z.preprocess(
+  (value) => (value === null || value === "" ? undefined : value),
+  z.coerce.number().min(0).max(1.5).default(0.9),
+);
+
+const ajusteBase = {
+  kind: kindSchema,
+  provider: providerEnum.default("auto"),
+  model: optionalText(200).default(""),
+  temperature: temperatureSchema,
+};
+
+export const ajusteRequestSchema = z.discriminatedUnion("acao", [
+  z
+    .object({
+      acao: z.literal("tom"),
+      tom: z.enum(TONES),
+      texto: z.string().trim().min(1, "Nada para reescrever.").max(2000),
+      contexto: optionalText(1000).default(""),
+      tracos: z.array(z.string().trim().max(100)).max(MAX_TRAITS).default([]),
+      emoji: z.boolean().default(false),
+      perfil: profileSchema,
+      ...ajusteBase,
+    })
+    .strip(),
+  z
+    .object({
+      acao: z.literal("analise"),
+      texto: z.string().trim().min(1, "Cole a mensagem que você recebeu.").max(4000),
+      contexto: optionalText(4000).default(""),
+      ...ajusteBase,
+    })
+    .strip(),
+]);
+
+export type AjusteRequest = z.infer<typeof ajusteRequestSchema>;
+
+export function parseAjusteRequest(raw: unknown) {
+  return ajusteRequestSchema.safeParse(raw);
+}
+
+export function normalizeAjusteRequest(data: AjusteRequest) {
+  if (data.acao === "analise") return data;
+  return { ...data, tracos: sanitizeTraits(data.tracos) };
 }
 
 export const conversaRequestSchema = z

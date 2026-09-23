@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { TONE_LABELS, TONES, type Tone } from "@/lib/adjust";
 import { humanize, type HumanizeOptions } from "@/lib/humanize";
 import { styleScore, type Fingerprint } from "@/lib/stylometry";
 import { isValidWhatsAppPhone } from "@/lib/whatsapp";
@@ -16,6 +17,8 @@ interface Props {
   onShown: (text: string) => void;
   preferState: "hidden" | "open" | "chosen" | "lost";
   onPrefer: (clean: string) => void;
+  /** Reescreve o texto (sem erros de digitação) num tom; sem ela, os botões de tom não aparecem. */
+  onTone?: (tom: Tone, texto: string) => Promise<string>;
 }
 
 function scoreClass(score: number) {
@@ -32,9 +35,13 @@ export default function ResultCard({
   onShown,
   preferState,
   onPrefer,
+  onTone,
 }: Props) {
   const [seed, setSeed] = useState(baseSeed * 7919);
   const [edited, setEdited] = useState<string | null>(null);
+  // Texto da IA atual: começa no `raw` e é trocado quando você pede outro tom.
+  const [current, setCurrent] = useState(raw);
+  const [toneLoading, setToneLoading] = useState<Tone | null>(null);
   const [showRaw, setShowRaw] = useState(false);
   const [flash, setFlash] = useState("");
   const [canShare, setCanShare] = useState(false);
@@ -48,10 +55,23 @@ export default function ResultCard({
     [],
   );
 
-  const text = edited ?? humanize(raw, { ...opts, seed });
+  const text = edited ?? humanize(current, { ...opts, seed });
   const nota = useMemo(() => (meuJeito ? styleScore(text, meuJeito) : null), [text, meuJeito]);
   // Versão sem erros de digitação: é a que vira exemplo, para o modelo não aprender typo falso.
-  const clean = () => edited ?? humanize(raw, { ...opts, typoRate: 0, seed });
+  const clean = () => edited ?? humanize(current, { ...opts, typoRate: 0, seed });
+
+  async function mudarTom(tom: Tone) {
+    if (!onTone || toneLoading) return;
+    setToneLoading(tom);
+    try {
+      setCurrent(await onTone(tom, clean()));
+      setEdited(null);
+    } catch (caught) {
+      notify(caught instanceof Error ? caught.message : "Não consegui mudar o tom.");
+    } finally {
+      setToneLoading(null);
+    }
+  }
 
   useEffect(() => onShown(text), [text, onShown]);
 
@@ -113,7 +133,16 @@ export default function ResultCard({
         onChange={(event) => setEdited(event.target.value)}
         aria-label="Resposta gerada"
       />
-      {showRaw && <p className="raw">{raw}</p>}
+      {showRaw && <p className="raw">{current}</p>}
+      {onTone && (
+        <div className="tones" role="group" aria-label="Mudar o tom">
+          {TONES.map((tom) => (
+            <button key={tom} className="act tone" disabled={toneLoading !== null} onClick={() => mudarTom(tom)}>
+              {toneLoading === tom ? "Reescrevendo…" : TONE_LABELS[tom]}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="actions">
         {preferState !== "hidden" && (
           <button

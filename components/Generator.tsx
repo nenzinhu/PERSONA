@@ -8,6 +8,8 @@ import { useLocalState } from "@/lib/store";
 import { MIN_EXAMPLES, calibrate, fingerprint } from "@/lib/stylometry";
 import type { Preference } from "@/lib/dataset";
 import type { GeneratedHistoryItem, ProviderStatus, Settings } from "@/lib/types";
+import { requestTone } from "@/lib/api";
+import MessageReading from "./MessageReading";
 import ResultCard from "./ResultCard";
 
 interface Props {
@@ -195,6 +197,7 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
             }
           />
         </label>
+        <MessageReading texto={texto} contexto={contexto} settings={settings} senha={senha} />
 
         <details className="more">
           <summary>Contexto extra (opcional)</summary>
@@ -502,6 +505,9 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
                         : "lost"
                 }
                 onPrefer={(clean) => preferir(index, clean)}
+                onTone={(tom, atual) =>
+                  requestTone({ tom, texto: atual, contexto: result.texto, settings, perfil, senha })
+                }
               />
             ))}
             <label className="field">
