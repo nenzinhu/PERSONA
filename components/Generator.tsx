@@ -9,6 +9,7 @@ import { MIN_EXAMPLES, calibrate, fingerprint } from "@/lib/stylometry";
 import type { Preference } from "@/lib/dataset";
 import type { GeneratedHistoryItem, ProviderStatus, Settings } from "@/lib/types";
 import { requestTone } from "@/lib/api";
+import { AudioButton } from "./MediaButtons";
 import MessageReading from "./MessageReading";
 import ResultCard from "./ResultCard";
 
@@ -197,7 +198,10 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
             }
           />
         </label>
-        <MessageReading texto={texto} contexto={contexto} settings={settings} senha={senha} />
+        <div className="tools">
+          <AudioButton senha={senha} onText={(transcrito) => setTexto(transcrito)} />
+          <MessageReading texto={texto} contexto={contexto} settings={settings} senha={senha} />
+        </div>
 
         <details className="more">
           <summary>Contexto extra (opcional)</summary>

@@ -11,20 +11,23 @@ export function isConfigured(p: ProviderInfo, env: Env): boolean {
   return Boolean(env[p.envKey]?.trim() && baseUrlFor(p, env));
 }
 
+/** Partes de conteúdo no formato OpenAI, para mandar imagens junto com texto. */
+export type ContentPart = { type: "text"; text: string } | { type: "image_url"; image_url: { url: string } };
+
 export interface ChatRequest {
   system: string;
-  messages: { role: "user" | "assistant"; content: string }[];
+  messages: { role: "user" | "assistant"; content: string | ContentPart[] }[];
   model: string;
   temperature: number;
   maxTokens: number;
 }
 
 export class ProviderError extends Error {
-  constructor(
-    message: string,
-    public status: number,
-  ) {
+  // Campo explícito (sem "parameter property") para rodar no node --experimental-strip-types dos testes.
+  status: number;
+  constructor(message: string, status: number) {
     super(message);
+    this.status = status;
   }
 }
 
@@ -77,11 +80,28 @@ function delay(ms: number) {
 
 const TRANSIENT_STATUS = new Set([408, 429, 500, 502, 503, 504]);
 
-export async function chat(p: ProviderInfo, env: Env, req: ChatRequest, signal?: AbortSignal): Promise<string> {
+/** Chave e base URL do provedor; lança ProviderError 400 se faltar algo. */
+export function credentialsFor(p: ProviderInfo, env: Env): { key: string; base: string } {
   const key = env[p.envKey]?.trim();
   const base = baseUrlFor(p, env);
   if (!key) throw new ProviderError(`Chave ${p.envKey} não configurada no Vercel.`, 400);
   if (!base) throw new ProviderError(`Base URL de ${p.label} não configurada (${p.envBaseUrl}).`, 400);
+  return { key, base };
+}
+
+/** Converte falhas de rede/timeout em ProviderError, mantendo as que já são. */
+export function toProviderError(error: unknown, p: ProviderInfo): ProviderError {
+  if (error instanceof ProviderError) return error;
+  if (error instanceof DOMException && (error.name === "AbortError" || error.name === "TimeoutError")) {
+    return new ProviderError(`${p.label} excedeu o tempo limite.`, 504);
+  }
+  return new ProviderError(errorMessage(error, `${p.label} falhou durante a requisição.`), 502);
+}
+
+export { readJson };
+
+export async function chat(p: ProviderInfo, env: Env, req: ChatRequest, signal?: AbortSignal): Promise<string> {
+  const { key, base } = credentialsFor(p, env);
 
   try {
     if (p.format === "anthropic") {
@@ -138,11 +158,7 @@ export async function chat(p: ProviderInfo, env: Env, req: ChatRequest, signal?:
     if (!text) throw new ProviderError(`${p.label} devolveu resposta vazia ou sem conteúdo de texto.`, 502);
     return text.replace(/[\s\S]*?<\/think>/g, "").trim();
   } catch (error) {
-    if (error instanceof ProviderError) throw error;
-    if (error instanceof DOMException && error.name === "AbortError") {
-      throw new ProviderError(`${p.label} excedeu o tempo limite.`, 504);
-    }
-    throw new ProviderError(errorMessage(error, `${p.label} falhou durante a requisição.`), 502);
+    throw toProviderError(error, p);
   }
 }
 

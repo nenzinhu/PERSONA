@@ -13,6 +13,7 @@ import { MIN_EXAMPLES, fingerprint } from "@/lib/stylometry";
 import type { Settings } from "@/lib/types";
 import { MAX_CONVERSATION, listSenders, parseConversation } from "@/lib/whatsapp";
 import { errorText, modelFields, postJson, requestTone } from "@/lib/api";
+import { AudioButton, PrintButton } from "./MediaButtons";
 import MessageReading from "./MessageReading";
 import ResultCard from "./ResultCard";
 
@@ -180,6 +181,25 @@ export default function Conversation({ settings, perfil, setPerfil, senha }: Pro
             }
           />
         </label>
+
+        <div className="tools">
+          <PrintButton
+            senha={senha}
+            onText={(lido) => {
+              setColado((current) => (current.trim() ? `${current.trimEnd()}\n${lido}` : lido));
+              // No print, as suas mensagens (balões da direita) vêm como "Eu".
+              if (/^Eu:/m.test(lido)) setEu({ v: "Eu" });
+            }}
+          />
+          <AudioButton
+            senha={senha}
+            onText={(transcrito) => {
+              const nome = nomeDaPessoa || "Outra pessoa";
+              const linha = `${nome}: ${transcrito.replace(/\s*\n\s*/g, " ")}`;
+              setColado((current) => (current.trim() ? `${current.trimEnd()}\n${linha}` : linha));
+            }}
+          />
+        </div>
 
         {colado.trim() && !mensagens.length && (
           <p className="error" role="alert">

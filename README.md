@@ -13,6 +13,14 @@ Next.js 15 (App Router) · sem banco de dados · deploy no Vercel.
 | **Meu estilo** | Seu nome, como você escreve, exemplos reais, importação de conversa do WhatsApp e export JSONL para fine-tuning. |
 | **Modelos**    | Qual modelo é o mais recomendado para cada tipo de texto e quais provedores têm chave.                           |
 
+### Ajudas extras
+
+- **Botões de tom** em cada resposta: mais curto, carinhoso, seco, engraçado ou formal.
+- **🌡️ Ler a mensagem**: emoção, intenção, entrelinhas e o que evitar ao responder.
+- **🎤 Áudio**: transcreve o áudio do WhatsApp (.opus/.ogg/.m4a, até 4 MB) com o Whisper do Groq.
+- **📷 Print** (aba Conversa): lê até 3 prints da conversa com um modelo de visão.
+- **Conversa**: modo _Puxar assunto_, atalhos de situação difícil (cobrar, recusar, terminar…) e ⏰ _quando mandar_.
+
 ### "Parecer que fui eu"
 
 - **Abreviações** 0–100%: você→vc, porque→pq, também→tb, hoje→hj, para→pra, está→tá, fim de semana→fds…
@@ -90,12 +98,15 @@ Veja [finetune/README.md](finetune/README.md): exporte o JSONL na aba _Meu estil
 
 Além das chaves listadas acima, o app aceita:
 
-| Variável               |           Padrão | Função                                          |
-| ---------------------- | ---------------: | ----------------------------------------------- |
-| `APP_PASSWORD`         |            vazio | Senha opcional para proteger a rota de geração. |
-| `RATE_LIMIT_MAX`       |             `20` | Requisições permitidas por janela.              |
-| `RATE_LIMIT_WINDOW_MS` |          `60000` | Tamanho da janela em milissegundos.             |
-| `<PROVIDER>_MODELS`    | catálogo interno | Substitui a lista de modelos de um provedor.    |
+| Variável               |                   Padrão | Função                                             |
+| ---------------------- | -----------------------: | -------------------------------------------------- |
+| `APP_PASSWORD`         |                    vazio | Senha opcional para proteger a rota de geração.    |
+| `RATE_LIMIT_MAX`       |                     `20` | Requisições permitidas por janela.                 |
+| `RATE_LIMIT_WINDOW_MS` |                  `60000` | Tamanho da janela em milissegundos.                |
+| `<PROVIDER>_MODELS`    |         catálogo interno | Substitui a lista de modelos de um provedor.       |
+| `TRANSCRIBE_MODEL`     | `whisper-large-v3-turbo` | Modelo do Groq para transcrever áudio (🎤).        |
+| `VISION_PROVIDER`      |          Mistral ou Groq | Provedor do modelo de visão que lê prints (📷).    |
+| `VISION_MODEL`         |       padrão do provedor | Id do modelo de visão (os ids mudam; ajuste aqui). |
 
 Execute `npm run env:check` para conferir quais variáveis estão presentes sem imprimir seus valores.
 

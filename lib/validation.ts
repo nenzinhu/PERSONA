@@ -4,6 +4,7 @@ import { MAX_EXAMPLES } from "./prompt.ts";
 import { MAX_TRAITS } from "./traits.ts";
 import { MAX_CONVERSATION } from "./whatsapp.ts";
 import { TONES } from "./adjust.ts";
+import { isImageDataUrl, MAX_IMAGES } from "./media.ts";
 import type { Mode, Stance } from "./prompt.ts";
 import type { ProviderId, TextKind } from "./providers.ts";
 
@@ -148,6 +149,19 @@ export function parseAjusteRequest(raw: unknown) {
 export function normalizeAjusteRequest(data: AjusteRequest) {
   if (data.acao === "analise") return data;
   return { ...data, tracos: sanitizeTraits(data.tracos) };
+}
+
+export const lerPrintRequestSchema = z
+  .object({
+    imagens: z
+      .array(z.string().refine(isImageDataUrl, "Imagem inválida ou grande demais."))
+      .min(1, "Escolha um print.")
+      .max(MAX_IMAGES, `Mande no máximo ${MAX_IMAGES} prints.`),
+  })
+  .strip();
+
+export function parseLerPrintRequest(raw: unknown) {
+  return lerPrintRequestSchema.safeParse(raw);
 }
 
 const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Horário inválido.");
