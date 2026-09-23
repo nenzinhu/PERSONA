@@ -10,6 +10,8 @@ Next.js 15 (App Router) · sem banco de dados · deploy no Vercel.
 | -------------- | ---------------------------------------------------------------------------------------------------------------- |
 | **Pergunta**   | Cole a pergunta que te fizeram → respostas prontas.                                                              |
 | **Afirmação**  | Cole o que te disseram e escolha a posição: concordar, discordar, neutro, curioso.                               |
+| **Conversa**   | Cole a conversa (ou um print) → plano, resposta, prováveis réplicas e quando mandar. Também puxa assunto.        |
+| **Treino**     | A IA faz o papel da outra pessoa para você ensaiar uma conversa difícil; no fim, avalia como você foi.           |
 | **Meu estilo** | Seu nome, como você escreve, exemplos reais, importação de conversa do WhatsApp e export JSONL para fine-tuning. |
 | **Modelos**    | Qual modelo é o mais recomendado para cada tipo de texto e quais provedores têm chave.                           |
 

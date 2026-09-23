@@ -5,6 +5,7 @@ import { MAX_TRAITS } from "./traits.ts";
 import { MAX_CONVERSATION } from "./whatsapp.ts";
 import { TONES } from "./adjust.ts";
 import { isImageDataUrl, MAX_IMAGES } from "./media.ts";
+import { MAX_SIM_TURNS } from "./simulator.ts";
 import type { Mode, Stance } from "./prompt.ts";
 import type { ProviderId, TextKind } from "./providers.ts";
 
@@ -162,6 +163,30 @@ export const lerPrintRequestSchema = z
 
 export function parseLerPrintRequest(raw: unknown) {
   return lerPrintRequestSchema.safeParse(raw);
+}
+
+export const simularRequestSchema = z
+  .object({
+    acao: z.enum(["responder", "avaliar"]),
+    pessoa: z.object({
+      nome: z.string().trim().min(1, "Diga o nome da pessoa.").max(60),
+      jeito: optionalText(500).default(""),
+      situacao: optionalText(300).default(""),
+    }),
+    historico: z
+      .array(z.object({ eu: z.boolean(), texto: z.string().trim().min(1).max(1000) }))
+      .max(MAX_SIM_TURNS, `O treino vai até ${MAX_SIM_TURNS} mensagens: recomece para continuar.`),
+    ...ajusteBase,
+  })
+  .superRefine((data, context) => {
+    if (data.acao === "avaliar" && !data.historico.some((turn) => turn.eu)) {
+      context.addIssue({ code: "custom", path: ["historico"], message: "Converse um pouco antes de avaliar." });
+    }
+  })
+  .strip();
+
+export function parseSimularRequest(raw: unknown) {
+  return simularRequestSchema.safeParse(raw);
 }
 
 const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Horário inválido.");

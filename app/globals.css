@@ -697,6 +697,61 @@ code {
   max-width: 22em;
 }
 
+.sim-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 4px 2px 8px;
+}
+.sim-msg {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  max-width: 85%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.sim-msg.me {
+  align-self: flex-end;
+  background: var(--bubble);
+  color: var(--bubble-ink);
+}
+.sim-msg.them {
+  align-self: flex-start;
+  background: var(--them);
+  color: var(--ink);
+}
+.sim-compose {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+.sim-compose textarea {
+  width: 100%;
+}
+.primary.small-primary {
+  width: auto;
+  padding: 8px 18px;
+}
+.evaluation {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+}
+.evaluation h3 {
+  margin: 10px 0 4px;
+  font-size: 0.95rem;
+}
+.evaluation p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+.eval-score {
+  font-size: 1.1rem;
+}
+
 .when {
   background: var(--warn-soft);
   border-radius: var(--radius);

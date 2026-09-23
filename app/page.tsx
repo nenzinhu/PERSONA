@@ -5,16 +5,18 @@ import Generator from "@/components/Generator";
 import StyleTrainer from "@/components/StyleTrainer";
 import ModelGuide from "@/components/ModelGuide";
 import Conversation from "@/components/Conversation";
+import Simulator from "@/components/Simulator";
 import { useLocalState, useSessionState } from "@/lib/store";
 import { DEFAULT_PROFILE, DEFAULT_SETTINGS, type ProviderStatus } from "@/lib/types";
 
-type Tab = "pergunta" | "afirmacao" | "conversa" | "estilo" | "modelos";
+type Tab = "pergunta" | "afirmacao" | "conversa" | "treino" | "estilo" | "modelos";
 type Theme = "system" | "light" | "dark";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "pergunta", label: "Pergunta" },
   { id: "afirmacao", label: "Afirmação" },
   { id: "conversa", label: "Conversa" },
+  { id: "treino", label: "Treino" },
   { id: "estilo", label: "Meu estilo" },
   { id: "modelos", label: "Modelos" },
 ];
@@ -147,6 +149,7 @@ export default function Home() {
       {tab.v === "conversa" && (
         <Conversation settings={settings} perfil={perfil} setPerfil={setPerfil} senha={senha.v} />
       )}
+      {tab.v === "treino" && <Simulator settings={settings} perfil={perfil} senha={senha.v} />}
       {tab.v === "estilo" && <StyleTrainer perfil={perfil} setPerfil={setPerfil} />}
       {tab.v === "modelos" && (
         <ModelGuide
