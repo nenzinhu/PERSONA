@@ -1,12 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { profileForRequest, type AgentOutput, type StyleProfile } from "@/lib/prompt";
+import {
+  profileForRequest,
+  SITUATIONS,
+  type AgentOutput,
+  type ConversationMode,
+  type StyleProfile,
+} from "@/lib/prompt";
 import { useLocalState } from "@/lib/store";
 import { MIN_EXAMPLES, fingerprint } from "@/lib/stylometry";
 import type { Settings } from "@/lib/types";
 import { MAX_CONVERSATION, listSenders, parseConversation } from "@/lib/whatsapp";
-import { requestTone } from "@/lib/api";
+import { errorText, modelFields, postJson, requestTone } from "@/lib/api";
 import MessageReading from "./MessageReading";
 import ResultCard from "./ResultCard";
 
@@ -26,9 +32,21 @@ interface Result extends AgentOutput {
 
 const noop = () => {};
 
+const MODES: { id: ConversationMode; label: string }[] = [
+  { id: "responder", label: "Responder" },
+  { id: "iniciar", label: "Puxar assunto" },
+];
+
+function horaAtual() {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+}
+
 export default function Conversation({ settings, perfil, setPerfil, senha }: Props) {
   const [colado, setColado] = useState("");
   const [objetivo, setObjetivo] = useState("");
+  const [modo, setModo] = useState<ConversationMode>("responder");
+  const [nomeOutro, setNomeOutro] = useState("");
   const [eu, setEu] = useLocalState<{ v: string }>("conversa-eu", { v: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -42,7 +60,6 @@ export default function Conversation({ settings, perfil, setPerfil, senha }: Pro
   const recentes = mensagens.slice(-MAX_CONVERSATION);
   const souEu = remetentes.includes(eu.v) ? eu.v : "";
   const ultima = recentes.at(-1);
-  const outro = remetentes.find((nome) => nome !== souEu) ?? "a outra pessoa";
 
   // Se o nome em "Meu estilo" bate com um remetente, já marca.
   useEffect(() => {
@@ -54,7 +71,15 @@ export default function Conversation({ settings, perfil, setPerfil, senha }: Pro
     [perfil.exemplos],
   );
 
-  const podeGerar = recentes.length > 0 && Boolean(souEu) && recentes.some((m) => m.from !== souEu) && !loading;
+  const temConversa = recentes.length > 0;
+  const nomeDaPessoa = nomeOutro.trim() || (remetentes.find((nome) => nome !== souEu) ?? "");
+  const podeGerar =
+    !loading &&
+    (modo === "responder"
+      ? temConversa && Boolean(souEu) && recentes.some((m) => m.from !== souEu)
+      : temConversa
+        ? Boolean(souEu)
+        : Boolean(nomeOutro.trim()));
 
   async function gerar() {
     abortRef.current?.abort();
@@ -63,28 +88,30 @@ export default function Conversation({ settings, perfil, setPerfil, senha }: Pro
     setLoading(true);
     setError("");
     try {
-      const response = await fetch("/api/conversa", {
-        method: "POST",
-        headers: { "content-type": "application/json", "x-app-password": senha },
-        signal: controller.signal,
-        body: JSON.stringify({
-          mensagens: recentes.map((m) => ({ eu: m.from === souEu, nome: m.from, texto: m.text.slice(0, 1000) })),
+      const data = await postJson<Omit<Result, "ultima">>(
+        "/api/conversa",
+        {
+          modo,
+          mensagens: recentes.map((m) => ({
+            eu: m.from === souEu,
+            nome: m.from,
+            texto: m.text.slice(0, 1000),
+            hora: m.hora,
+          })),
+          nomeOutro: nomeDaPessoa,
+          agora: horaAtual(),
           objetivo,
-          kind: settings.kind,
           tracos: settings.tracos,
           emoji: settings.emoji,
           perfil: profileForRequest(perfil),
-          provider: settings.provider,
-          model: settings.model,
-          temperature: settings.temperatura,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "Erro ao gerar");
+          ...modelFields(settings),
+        },
+        senha,
+        controller.signal,
+      );
       setResult({ ...data, ultima: [...recentes].reverse().find((m) => m.from !== souEu)?.text ?? "" });
     } catch (caught) {
-      if (caught instanceof DOMException && caught.name === "AbortError") setError("Geração cancelada.");
-      else setError(caught instanceof Error ? caught.message : String(caught));
+      setError(errorText(caught));
     } finally {
       if (abortRef.current === controller) abortRef.current = null;
       setLoading(false);
@@ -127,8 +154,23 @@ export default function Conversation({ settings, perfil, setPerfil, senha }: Pro
   return (
     <section className="grid">
       <div className="card">
+        <div className="field">
+          <span>O que você quer fazer?</span>
+          <div className="seg" role="group" aria-label="Modo">
+            {MODES.map((item) => (
+              <button key={item.id} className={modo === item.id ? "on" : ""} onClick={() => setModo(item.id)}>
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <label className="field">
-          <span>Conversa (selecione as mensagens no WhatsApp → Copiar → cole aqui)</span>
+          <span>
+            {modo === "responder"
+              ? "Conversa (selecione as mensagens no WhatsApp → Copiar → cole aqui)"
+              : "Conversa anterior (opcional: ajuda a achar um gancho)"}
+          </span>
           <textarea
             rows={8}
             value={colado}
@@ -159,13 +201,29 @@ export default function Conversation({ settings, perfil, setPerfil, senha }: Pro
               {mensagens.length > MAX_CONVERSATION
                 ? `Usando as últimas ${MAX_CONVERSATION} de ${mensagens.length} mensagens.`
                 : `${mensagens.length} mensagens reconhecidas.`}
-              {souEu && ultima?.from === souEu && " A última mensagem é sua: vou sugerir uma continuação."}
+              {souEu &&
+                ultima?.from === souEu &&
+                (modo === "responder"
+                  ? " A última mensagem é sua: vou sugerir uma continuação (ou use Puxar assunto)."
+                  : " A última mensagem é sua: vou sugerir como retomar.")}
               {remetentes.length === 1 && " Só achei um remetente."}
             </small>
           </div>
         )}
-        {souEu && ultimaDeles && (
+        {modo === "responder" && souEu && ultimaDeles && (
           <MessageReading texto={ultimaDeles} contexto={antes} settings={settings} senha={senha} />
+        )}
+
+        {modo === "iniciar" && (
+          <label className="field">
+            <span>Com quem? {temConversa ? "(opcional)" : ""}</span>
+            <input
+              maxLength={80}
+              value={nomeOutro}
+              onChange={(event) => setNomeOutro(event.target.value)}
+              placeholder={remetentes.find((nome) => nome !== souEu) ?? "ex: Ana, minha prima"}
+            />
+          </label>
         )}
 
         <label className="field">
@@ -177,9 +235,21 @@ export default function Conversation({ settings, perfil, setPerfil, senha }: Pro
             placeholder="ex: remarcar pra sábado sem parecer furão"
           />
         </label>
+        <div className="chips" role="group" aria-label="Situações difíceis">
+          {SITUATIONS.map((situation) => (
+            <button
+              key={situation.id}
+              className={objetivo === situation.objetivo ? "chip pos on" : "chip"}
+              title={situation.objetivo}
+              onClick={() => setObjetivo((current) => (current === situation.objetivo ? "" : situation.objetivo))}
+            >
+              {situation.label}
+            </button>
+          ))}
+        </div>
 
         <button className="primary" disabled={!podeGerar} onClick={gerar}>
-          {loading ? "Pensando…" : "Planejar resposta"}
+          {loading ? "Pensando…" : modo === "responder" ? "Planejar resposta" : "Sugerir como puxar assunto"}
         </button>
         {loading && (
           <div className="actions">
@@ -216,11 +286,16 @@ export default function Conversation({ settings, perfil, setPerfil, senha }: Pro
               </p>
             )}
             {card(result.resposta, 1, result.ultima)}
+            {result.quando && (
+              <p className="when">
+                <b>⏰ Quando mandar:</b> {result.quando}
+              </p>
+            )}
             {result.replicas.length > 0 && <h3 className="replies-title">Se a conversa seguir…</h3>}
             {result.replicas.map((replica, index) => (
               <div key={index} className="reply">
                 <p className="them">
-                  <small className="muted">se {outro} disser</small>
+                  <small className="muted">se {nomeDaPessoa || "a outra pessoa"} disser</small>
                   <br />
                   {replica.deles}
                 </p>

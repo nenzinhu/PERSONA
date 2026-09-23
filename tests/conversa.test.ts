@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { MAX_CONVERSATION, parseConversation } from "../lib/whatsapp.ts";
-import { buildConversationMessages, parseAgentOutput } from "../lib/prompt.ts";
+import { buildConversationMessages, parseAgentOutput, SITUATIONS } from "../lib/prompt.ts";
 import { parseConversaRequest } from "../lib/validation.ts";
 
 const PERFIL = { nome: "Jef", descricao: "", exemplos: [{ contexto: "vai hj?", resposta: "vo sim" }] };
@@ -14,16 +14,23 @@ test("parseConversation lê mensagens copiadas (hora antes da data) e continua l
     "[21:40, 21/09/2026] Ana: preciso saber hj",
   ].join("\n");
   assert.deepEqual(parseConversation(raw), [
-    { from: "Ana", text: "vc vem sexta?" },
-    { from: "Jef", text: "acho q sim\nmas confirmo dps" },
-    { from: "Ana", text: "preciso saber hj" },
+    { from: "Ana", text: "vc vem sexta?", hora: "21:03", data: "21/09/2026" },
+    { from: "Jef", text: "acho q sim\nmas confirmo dps", hora: "21:05", data: "21/09/2026" },
+    { from: "Ana", text: "preciso saber hj", hora: "21:40", data: "21/09/2026" },
   ]);
 });
 
 test("parseConversation aceita o formato exportado e linhas simples Nome: texto", () => {
   assert.deepEqual(parseConversation("21/09/2026 21:03 - Ana: oi\nJef: e ai"), [
-    { from: "Ana", text: "oi" },
+    { from: "Ana", text: "oi", hora: "21:03", data: "21/09/2026" },
     { from: "Jef", text: "e ai" },
+  ]);
+});
+
+test("parseConversation normaliza hora AM/PM para 24h", () => {
+  assert.deepEqual(parseConversation("[9/21/26, 9:03:12 PM] Ana: oi\n[9:05 AM, 9/22/26] Jef: bom dia"), [
+    { from: "Ana", text: "oi", hora: "21:03", data: "9/21/26" },
+    { from: "Jef", text: "bom dia", hora: "09:05", data: "9/22/26" },
   ]);
 });
 
@@ -74,6 +81,50 @@ test("buildConversationMessages sem objetivo usa o padrão", () => {
   assert.match(messages.at(-1)!.content, /<<<OBJETIVO>>>\nresponder bem/);
 });
 
+test("buildConversationMessages inclui horários, a hora atual e pede QUANDO MANDAR", () => {
+  const { system, messages } = buildConversationMessages({
+    mensagens: [
+      { eu: true, nome: "Jef", texto: "bora sexta?", hora: "20:10" },
+      { eu: false, nome: "Ana", texto: "vou ver", hora: "21:40" },
+    ],
+    objetivo: "",
+    agora: "21:45",
+    kind: "casual",
+    tracos: [],
+    emoji: false,
+    perfil: PERFIL,
+  });
+  assert.match(system, /### QUANDO MANDAR/);
+  const last = messages.at(-1)!.content;
+  assert.match(last, /\[20:10\] Você: bora sexta\?/);
+  assert.match(last, /\[21:40\] Ana: vou ver/);
+  assert.match(last, /<<<AGORA>>>\n21:45/);
+});
+
+test("buildConversationMessages no modo iniciar pede para puxar assunto, mesmo sem conversa", () => {
+  const { system, messages } = buildConversationMessages({
+    mensagens: [],
+    modo: "iniciar",
+    nomeOutro: "Ana",
+    objetivo: "",
+    kind: "casual",
+    tracos: [],
+    emoji: false,
+    perfil: PERFIL,
+  });
+  assert.match(system, /puxar assunto|abrir|reabrir/i);
+  const last = messages.at(-1)!.content;
+  assert.match(last, /<<<PESSOA>>>\nAna/);
+  assert.match(last, /\(nenhuma mensagem ainda\)/);
+});
+
+test("SITUATIONS tem objetivos prontos para situações difíceis", () => {
+  assert.ok(SITUATIONS.length >= 6);
+  for (const situation of SITUATIONS) {
+    assert.ok(situation.label && situation.objetivo.length > 20 && situation.objetivo.length <= 300);
+  }
+});
+
 test("parseAgentOutput lê plano, resposta e réplicas", () => {
   const raw = [
     "### PLANO",
@@ -88,6 +139,8 @@ test("parseAgentOutput lê plano, resposta e réplicas", () => {
     "rola sim",
     "### VOCÊ RESPONDE",
     "fechou entao",
+    "### QUANDO MANDAR",
+    "agora, ela tá online",
   ].join("\n");
   assert.deepEqual(parseAgentOutput(raw), {
     plano: "reconhecer e propor sábado",
@@ -96,6 +149,7 @@ test("parseAgentOutput lê plano, resposta e réplicas", () => {
       { deles: "sábado não dá", voce: "blz, e domingo?" },
       { deles: "rola sim", voce: "fechou entao" },
     ],
+    quando: "agora, ela tá online",
   });
 });
 
@@ -115,11 +169,17 @@ test("parseAgentOutput tolera variações de título e réplica incompleta", () 
     plano: "ser direto",
     resposta: "vou sim",
     replicas: [{ deles: "certeza?", voce: "ctz" }],
+    quando: "",
   });
 });
 
 test("parseAgentOutput sem títulos usa o texto todo como resposta", () => {
-  assert.deepEqual(parseAgentOutput("  vou sim, sábado  "), { plano: "", resposta: "vou sim, sábado", replicas: [] });
+  assert.deepEqual(parseAgentOutput("  vou sim, sábado  "), {
+    plano: "",
+    resposta: "vou sim, sábado",
+    replicas: [],
+    quando: "",
+  });
 });
 
 test("parseConversaRequest valida e limita a conversa", () => {
@@ -130,4 +190,18 @@ test("parseConversaRequest valida e limita a conversa", () => {
   assert.equal(parseConversaRequest({ mensagens: muitas }).success, false);
   const soEu = parseConversaRequest({ mensagens: [{ eu: true, nome: "Jef", texto: "oi" }] });
   assert.equal(soEu.success, false);
+});
+
+test("parseConversaRequest no modo iniciar aceita conversa vazia com o nome da pessoa", () => {
+  assert.equal(parseConversaRequest({ modo: "iniciar", mensagens: [], nomeOutro: "Ana" }).success, true);
+  assert.equal(parseConversaRequest({ modo: "iniciar", mensagens: [] }).success, false);
+  const soEu = parseConversaRequest({ modo: "iniciar", mensagens: [{ eu: true, nome: "Jef", texto: "oi?" }] });
+  assert.equal(soEu.success, true);
+  const comHora = parseConversaRequest({
+    mensagens: [{ eu: false, nome: "Ana", texto: "oi", hora: "21:03" }],
+    agora: "21:10",
+  });
+  assert.equal(comHora.success, true);
+  if (comHora.success) assert.equal(comHora.data.mensagens[0].hora, "21:03");
+  assert.equal(parseConversaRequest({ mensagens: [{ eu: false, texto: "oi", hora: "99:99" }] }).success, false);
 });

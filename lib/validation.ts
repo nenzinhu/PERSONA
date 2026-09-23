@@ -150,19 +150,23 @@ export function normalizeAjusteRequest(data: AjusteRequest) {
   return { ...data, tracos: sanitizeTraits(data.tracos) };
 }
 
+const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Horário inválido.");
+
 export const conversaRequestSchema = z
   .object({
+    modo: z.enum(["responder", "iniciar"]).default("responder"),
     mensagens: z
       .array(
         z.object({
           eu: z.boolean(),
           nome: z.string().trim().max(80).default(""),
           texto: z.string().trim().min(1).max(1000),
+          hora: timeSchema.optional(),
         }),
       )
-      .min(1, "Cole a conversa.")
-      .max(MAX_CONVERSATION, `Use no máximo ${MAX_CONVERSATION} mensagens.`)
-      .refine((items) => items.some((item) => !item.eu), "A conversa precisa ter mensagem da outra pessoa."),
+      .max(MAX_CONVERSATION, `Use no máximo ${MAX_CONVERSATION} mensagens.`),
+    nomeOutro: optionalText(80).default(""),
+    agora: z.preprocess((value) => (value === "" || value === null ? undefined : value), timeSchema.optional()),
     objetivo: optionalText(300).default(""),
     kind: z.enum(["casual", "argumento", "persona", "formal"]).default("casual"),
     tracos: z.array(z.string().trim().max(100)).max(MAX_TRAITS).default([]),
@@ -175,6 +179,20 @@ export const conversaRequestSchema = z
       z.coerce.number().min(0).max(1.5).default(0.9),
     ),
   })
+  .superRefine((data, context) => {
+    if (data.modo === "responder") {
+      if (!data.mensagens.length)
+        context.addIssue({ code: "custom", path: ["mensagens"], message: "Cole a conversa." });
+      else if (!data.mensagens.some((item) => !item.eu))
+        context.addIssue({
+          code: "custom",
+          path: ["mensagens"],
+          message: "A conversa precisa ter mensagem da outra pessoa.",
+        });
+    } else if (!data.mensagens.length && !data.nomeOutro) {
+      context.addIssue({ code: "custom", path: ["nomeOutro"], message: "Diga com quem você quer puxar assunto." });
+    }
+  })
   .strip();
 
 export type ConversaRequest = z.infer<typeof conversaRequestSchema>;
@@ -185,7 +203,10 @@ export function parseConversaRequest(raw: unknown) {
 
 export function normalizeConversaRequest(data: ConversaRequest) {
   return {
+    modo: data.modo,
     mensagens: data.mensagens,
+    nomeOutro: data.nomeOutro,
+    agora: data.agora ?? "",
     objetivo: data.objetivo,
     kind: data.kind satisfies TextKind,
     tracos: sanitizeTraits(data.tracos),

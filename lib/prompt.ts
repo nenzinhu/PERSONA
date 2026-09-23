@@ -144,11 +144,21 @@ export interface ConversationMessage {
   eu: boolean;
   nome: string;
   texto: string;
+  /** "HH:MM", quando a mensagem colada tinha horário. */
+  hora?: string;
 }
+
+export type ConversationMode = "responder" | "iniciar";
 
 export interface ConversationInput extends StyleInput {
   mensagens: ConversationMessage[];
   objetivo: string;
+  /** "responder" (padrão): responde a última mensagem. "iniciar": puxa ou reabre o assunto. */
+  modo?: ConversationMode;
+  /** Hora atual do usuário ("HH:MM"), para a IA sugerir quando mandar. */
+  agora?: string;
+  /** Nome da outra pessoa, usado no modo iniciar sem conversa colada. */
+  nomeOutro?: string;
 }
 
 export interface AgentReply {
@@ -160,10 +170,18 @@ export interface AgentOutput {
   plano: string;
   resposta: string;
   replicas: AgentReply[];
+  /** Sugestão de quando mandar; vazio se a IA não disser. */
+  quando: string;
 }
 
+const MODE_RULES: Record<ConversationMode, string> = {
+  responder:
+    "Você vai ler um trecho de conversa e responder a última mensagem da outra pessoa, buscando o objetivo informado.",
+  iniciar:
+    "Você vai puxar assunto: escreva uma mensagem para abrir ou reabrir a conversa com essa pessoa, natural e sem parecer forçada, buscando o objetivo informado. Se houver conversa anterior, use algo dela como gancho.",
+};
+
 const AGENT_FORMAT = [
-  "Você vai ler um trecho de conversa e responder a última mensagem da outra pessoa, buscando o objetivo informado.",
   "Responda EXATAMENTE neste formato de seções, sem nada antes ou depois:",
   "### PLANO",
   "(a estratégia da resposta em uma linha curta)",
@@ -174,30 +192,74 @@ const AGENT_FORMAT = [
   "### VOCÊ RESPONDE",
   "(a sua tréplica, do seu jeito)",
   "Repita o par SE ELE(A) DISSER / VOCÊ RESPONDE mais uma vez com outra réplica provável e diferente.",
+  "### QUANDO MANDAR",
+  "(em uma linha: mandar agora ou esperar, e quanto; use os horários das mensagens e a hora atual, se houver)",
+];
+
+/** Atalhos para situações difíceis: preenchem o objetivo com uma instrução detalhada. */
+export const SITUATIONS: { id: string; label: string; objetivo: string }[] = [
+  {
+    id: "recusar",
+    label: "Recusar convite",
+    objetivo: "recusar o convite com carinho, sem inventar desculpa mirabolante e sem deixar a pessoa chateada",
+  },
+  {
+    id: "cobrar",
+    label: "Cobrar dinheiro",
+    objetivo: "cobrar o dinheiro que a pessoa me deve de forma leve e direta, sem climão, sugerindo prazo ou pix",
+  },
+  {
+    id: "desculpa",
+    label: "Pedir desculpa",
+    objetivo: "pedir desculpa de verdade, assumindo o erro sem me humilhar e sem ficar dando justificativa demais",
+  },
+  {
+    id: "remarcar",
+    label: "Remarcar",
+    objetivo: "remarcar o compromisso sem parecer furão, já sugerindo um novo dia e horário",
+  },
+  {
+    id: "nao-chefe",
+    label: "Dizer não ao chefe",
+    objetivo: "dizer não ao pedido do chefe com respeito, explicando a prioridade atual e oferecendo uma alternativa",
+  },
+  {
+    id: "terminar",
+    label: "Terminar",
+    objetivo: "terminar a relação com respeito e clareza, sem culpar a outra pessoa e sem deixar esperança falsa",
+  },
 ];
 
 export function buildConversationMessages(input: ConversationInput): {
   system: string;
   messages: { role: "user" | "assistant"; content: string }[];
 } {
-  const system = [...styleRules(input), ...AGENT_FORMAT].filter(Boolean).join("\n");
+  const modo = input.modo ?? "responder";
+  const system = [...styleRules(input), MODE_RULES[modo], ...AGENT_FORMAT].filter(Boolean).join("\n");
 
   const exemplos = input.perfil.exemplos
     .slice(-MAX_EXAMPLES)
     .map(sanitizeStyleExample)
     .filter((e) => e.contexto && e.resposta)
     .map((e) => `Recebida: ${e.contexto}\nVocê respondeu: ${e.resposta}`);
-  const conversa = input.mensagens
-    .map(
-      (m) =>
-        `${m.eu ? "Você" : sanitizePromptData(m.nome, 60) || "Outra pessoa"}: ${sanitizePromptData(m.texto, 1000)}`,
-    )
-    .join("\n");
-  const objetivo = sanitizePromptData(input.objetivo, 300) || "responder bem, do meu jeito";
+  const conversa =
+    input.mensagens
+      .map((m) => {
+        const hora = m.hora ? `[${m.hora}] ` : "";
+        const nome = m.eu ? "Você" : sanitizePromptData(m.nome, 60) || "Outra pessoa";
+        return `${hora}${nome}: ${sanitizePromptData(m.texto, 1000)}`;
+      })
+      .join("\n") || "(nenhuma mensagem ainda)";
+  const padrao = modo === "iniciar" ? "puxar assunto de um jeito natural" : "responder bem, do meu jeito";
+  const objetivo = sanitizePromptData(input.objetivo, 300) || padrao;
+  const pessoa = sanitizePromptData(input.nomeOutro ?? "", 80);
+  const agora = sanitizePromptData(input.agora ?? "", 5);
 
   const content = [
     exemplos.length ? `<<<EXEMPLOS_DE_ESTILO>>>\n${exemplos.join("\n\n")}` : "",
+    pessoa ? `<<<PESSOA>>>\n${pessoa}` : "",
     `<<<CONVERSA>>>\n${conversa}`,
+    agora ? `<<<AGORA>>>\n${agora}` : "",
     `<<<OBJETIVO>>>\n${objetivo}`,
   ]
     .filter(Boolean)
@@ -206,7 +268,7 @@ export function buildConversationMessages(input: ConversationInput): {
   return { system, messages: [{ role: "user", content }] };
 }
 
-type Section = "plano" | "resposta" | "deles" | "voce";
+type Section = "plano" | "resposta" | "deles" | "voce" | "quando";
 
 function normalizeHeading(text: string) {
   return text.normalize("NFD").replace(/\p{M}/gu, "").replace(/\*/g, "").toLowerCase().trim();
@@ -217,6 +279,7 @@ const HEADINGS: [Section, RegExp][] = [
   ["resposta", /^resposta\b/],
   ["deles", /^se\s.{0,30}?disser\b/],
   ["voce", /^voce responde\b/],
+  ["quando", /^quando mandar\b/],
 ];
 
 /**
@@ -259,13 +322,14 @@ export function parseSections<S extends string>(raw: string, headings: [S, RegEx
 
 export function parseAgentOutput(raw: string): AgentOutput {
   const blocks = parseSections(raw, HEADINGS);
-  if (!blocks.length) return { plano: "", resposta: raw.trim(), replicas: [] };
+  if (!blocks.length) return { plano: "", resposta: raw.trim(), replicas: [], quando: "" };
 
-  const out: AgentOutput = { plano: "", resposta: "", replicas: [] };
+  const out: AgentOutput = { plano: "", resposta: "", replicas: [], quando: "" };
   const pairs: Partial<AgentReply>[] = [];
   for (const block of blocks) {
     if (block.section === "plano" && !out.plano) out.plano = block.text;
     else if (block.section === "resposta" && !out.resposta) out.resposta = block.text;
+    else if (block.section === "quando" && !out.quando) out.quando = block.text;
     else if (block.section === "deles") pairs.push({ deles: block.text });
     else if (block.section === "voce") {
       const open = pairs.at(-1);
