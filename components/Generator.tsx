@@ -10,6 +10,7 @@ import type { Preference } from "@/lib/dataset";
 import type { GeneratedHistoryItem, ProviderStatus, Settings } from "@/lib/types";
 import { requestTone } from "@/lib/api";
 import { AudioButton } from "./MediaButtons";
+import Fader from "./Fader";
 import MessageReading from "./MessageReading";
 import ResultCard from "./ResultCard";
 
@@ -190,7 +191,8 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
         <label className="field">
           <span>{mode === "pergunta" ? "Pergunta que te fizeram" : "Afirmação que te mandaram"}</span>
           <textarea
-            rows={4}
+            className="headline-input"
+            rows={2}
             value={texto}
             onChange={(event) => setTexto(event.target.value)}
             placeholder={
@@ -349,32 +351,35 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
               {meuJeito ? calibrado : `Precisa de ${MIN_EXAMPLES} exemplos seus (tem ${perfil.exemplos.length}).`}
             </span>
           </div>
-          <label className="slider">
-            <span>
-              Abreviações (vc, pq, tb) <b>{h.abbreviation}%</b>
-            </span>
-            <input
-              type="range"
+          <div className="faders">
+            <Fader
+              label="abreviação (vc, pq, tb)"
+              value={h.abbreviation}
               min={0}
               max={100}
               step={5}
-              value={h.abbreviation}
-              onChange={(event) => setH("abbreviation", Number(event.target.value))}
+              display={`${h.abbreviation}%`}
+              onChange={(value) => setH("abbreviation", value)}
             />
-          </label>
-          <label className="slider">
-            <span>
-              Erros de digitação <b>{h.typoRate}%</b> das palavras
-            </span>
-            <input
-              type="range"
+            <Fader
+              label="erros de digitação"
+              value={h.typoRate}
               min={0}
               max={20}
               step={1}
-              value={h.typoRate}
-              onChange={(event) => setH("typoRate", Number(event.target.value))}
+              display={`${h.typoRate}%`}
+              onChange={(value) => setH("typoRate", value)}
             />
-          </label>
+            <Fader
+              label="criatividade"
+              value={settings.temperatura}
+              min={0.2}
+              max={1.3}
+              step={0.1}
+              display={settings.temperatura.toFixed(1)}
+              onChange={(value) => set("temperatura", value)}
+            />
+          </div>
           <div className="toggles">
             <label>
               <input type="checkbox" checked={h.casual} onChange={(event) => setH("casual", event.target.checked)} />{" "}
@@ -393,29 +398,16 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
               emoji
             </label>
           </div>
-          <div className="row">
-            <label className="field">
-              <span>Versões</span>
-              <select value={settings.variacoes} onChange={(event) => set("variacoes", Number(event.target.value))}>
-                {[1, 2, 3, 4].map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="field">
-              <span>Criatividade {settings.temperatura.toFixed(1)}</span>
-              <input
-                type="range"
-                min={0.2}
-                max={1.3}
-                step={0.1}
-                value={settings.temperatura}
-                onChange={(event) => set("temperatura", Number(event.target.value))}
-              />
-            </label>
-          </div>
+          <label className="field versions">
+            <span>Versões</span>
+            <select value={settings.variacoes} onChange={(event) => set("variacoes", Number(event.target.value))}>
+              {[1, 2, 3, 4].map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
+          </label>
         </details>
 
         <div className="row">

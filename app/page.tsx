@@ -74,8 +74,10 @@ export default function Home() {
     <main className="shell">
       <header className="top">
         <div>
-          <h1>Gerador de Respostas</h1>
-          <p className="sub">Responde do seu jeito: abreviações, erros de digitação e a sua personalidade.</p>
+          <h1 className="brand">persona</h1>
+          <p className="sub">
+            Gerador de respostas do seu jeito: abreviações, erros de digitação e a sua personalidade.
+          </p>
         </div>
         <div className="top-actions">
           <span className="pill">{perfil.exemplos.length} exemplos seus</span>
