@@ -65,3 +65,10 @@ test("validação do comentário exige ao menos uma resposta e no máximo quatro
   assert.equal(ok.success, true);
   if (ok.success) assert.deepEqual(normalizeAjusteRequest(ok.data), ok.data);
 });
+
+test("com uma versão só, o prompt não pede escolha", () => {
+  const uma = buildCoachMessages({ texto: "oi", contexto: "", respostas: ["eae"] }).system;
+  const duas = buildCoachMessages({ texto: "oi", contexto: "", respostas: ["eae", "opa"] }).system;
+  assert.doesNotMatch(uma, /ESCOLHA/);
+  assert.match(duas, /### ESCOLHA/);
+});

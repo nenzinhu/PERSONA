@@ -13,6 +13,7 @@ import { MIN_EXAMPLES, fingerprint } from "@/lib/stylometry";
 import type { Settings } from "@/lib/types";
 import { MAX_CONVERSATION, listSenders, parseConversation } from "@/lib/whatsapp";
 import { errorText, modelFields, postJson, requestTone } from "@/lib/api";
+import CoachBar, { useCoach } from "./CoachBar";
 import { AudioButton, PrintButton } from "./MediaButtons";
 import MessageReading from "./MessageReading";
 import ResultCard from "./ResultCard";
@@ -53,6 +54,10 @@ export default function Conversation({ settings, perfil, setPerfil, senha }: Pro
   const [error, setError] = useState("");
   const [result, setResult] = useState<Result | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Texto que o cartão da resposta principal mostra agora, para a IA comentar exatamente isso.
+  const shownRef = useRef("");
+  const { coach, loading: coachLoading, error: coachError, comentar: pedirComentario } = useCoach(result);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -128,7 +133,7 @@ export default function Conversation({ settings, perfil, setPerfil, senha }: Pro
       );
   }
 
-  const card = (raw: string, seed: number, contexto: string) => (
+  const card = (raw: string, seed: number, contexto: string, principal = false) => (
     <ResultCard
       key={`${seed}-${raw}`}
       raw={raw}
@@ -137,12 +142,33 @@ export default function Conversation({ settings, perfil, setPerfil, senha }: Pro
       telefone={settings.telefone}
       onSave={salvarExemplo(contexto)}
       meuJeito={meuJeito}
-      onShown={noop}
+      onShown={principal ? mostrarPrincipal : noop}
       preferState="hidden"
       onPrefer={noop}
       onTone={(tom, atual) => requestTone({ tom, texto: atual, contexto, settings, perfil, senha })}
+      coach={principal ? coach?.review.notas[0] : undefined}
+      coachFor={principal ? coach?.textos[0] : undefined}
     />
   );
+
+  function mostrarPrincipal(shown: string) {
+    shownRef.current = shown;
+  }
+
+  function comentar() {
+    if (!result) return;
+    const conversa = recentes
+      .slice(-10)
+      .map((m) => `${m.from === souEu ? "Você" : m.from}: ${m.text}`)
+      .join("\n");
+    void pedirComentario({
+      texto: result.ultima || conversa || "(puxar assunto)",
+      contexto: [conversa, objetivo && `Objetivo: ${objetivo}`].filter(Boolean).join("\n"),
+      respostas: [shownRef.current || result.resposta],
+      settings,
+      senha,
+    });
+  }
 
   // Última mensagem da outra pessoa e o que veio antes, para "Ler a mensagem".
   const ultimaIndex = recentes.findLastIndex((m) => m.from !== souEu);
@@ -296,16 +322,18 @@ export default function Conversation({ settings, perfil, setPerfil, senha }: Pro
         )}
         {result && (
           <>
-            <p className="muted small">
-              via <b>{result.providerLabel}</b> · {result.model}
-              {result.fallbacks.length > 0 && <> · (pulou {result.fallbacks.length} por limite)</>}
-            </p>
+            <CoachBar coach={coach} loading={coachLoading} error={coachError} onAsk={comentar}>
+              <p className="muted small">
+                via <b>{result.providerLabel}</b> · {result.model}
+                {result.fallbacks.length > 0 && <> · (pulou {result.fallbacks.length} por limite)</>}
+              </p>
+            </CoachBar>
             {result.plano && (
               <p className="plan">
                 <b>Plano:</b> {result.plano}
               </p>
             )}
-            {card(result.resposta, 1, result.ultima)}
+            {card(result.resposta, 1, result.ultima, true)}
             {result.quando && (
               <p className="when">
                 <b>⏰ Quando mandar:</b> {result.quando}

@@ -8,8 +8,8 @@ import { useLocalState } from "@/lib/store";
 import { MIN_EXAMPLES, calibrate, fingerprint } from "@/lib/stylometry";
 import type { Preference } from "@/lib/dataset";
 import type { GeneratedHistoryItem, ProviderStatus, Settings } from "@/lib/types";
-import { errorText, requestCoach, requestTone } from "@/lib/api";
-import type { CoachReview } from "@/lib/coach";
+import { requestTone } from "@/lib/api";
+import CoachBar, { useCoach } from "./CoachBar";
 import { AudioButton } from "./MediaButtons";
 import Fader from "./Fader";
 import MessageReading from "./MessageReading";
@@ -51,11 +51,6 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
   const [, setPreferencias] = useLocalState<Preference[]>("preferencias", []);
   const [preferred, setPreferred] = useState<number | null>(null);
   const [calibrado, setCalibrado] = useState("");
-  // Comentários da IA e os textos exatos que ela comentou (para avisar quando a resposta mudou depois).
-  const [coach, setCoach] = useState<{ review: CoachReview; textos: string[] } | null>(null);
-  const [coachLoading, setCoachLoading] = useState(false);
-  const [coachError, setCoachError] = useState("");
-  const coachAbortRef = useRef<AbortController | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   // Texto que cada card está mostrando agora (após embaralhar/editar), para o par do teste A/B.
   const shownRef = useRef<string[]>([]);
@@ -65,19 +60,9 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
     [perfil.exemplos],
   );
 
-  useEffect(
-    () => () => {
-      abortRef.current?.abort();
-      coachAbortRef.current?.abort();
-    },
-    [],
-  );
-  useEffect(() => {
-    setPreferred(null);
-    coachAbortRef.current?.abort();
-    setCoach(null);
-    setCoachError("");
-  }, [result]);
+  useEffect(() => () => abortRef.current?.abort(), []);
+  useEffect(() => setPreferred(null), [result]);
+  const { coach, loading: coachLoading, error: coachError, comentar: pedirComentario } = useCoach(result);
 
   const set = <K extends keyof Settings>(key: K, value: Settings[K]) =>
     setSettings((current) => ({ ...current, [key]: value }));
@@ -200,26 +185,10 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
     setPreferred(index);
   }
 
-  async function comentar() {
+  function comentar() {
     if (!result) return;
-    const textos = result.variations.map((variation, i) => shownRef.current[i] ?? variation);
-    coachAbortRef.current?.abort();
-    const controller = new AbortController();
-    coachAbortRef.current = controller;
-    setCoachLoading(true);
-    setCoachError("");
-    try {
-      const review = await requestCoach(
-        { texto: result.texto, contexto, respostas: textos, settings, senha },
-        controller.signal,
-      );
-      setCoach({ review, textos });
-    } catch (caught) {
-      if (!controller.signal.aborted) setCoachError(errorText(caught));
-    } finally {
-      if (coachAbortRef.current === controller) coachAbortRef.current = null;
-      setCoachLoading(false);
-    }
+    const respostas = result.variations.map((variation, i) => shownRef.current[i] ?? variation);
+    void pedirComentario({ texto: result.texto, contexto, respostas, settings, senha });
   }
 
   const h = settings.humanize;
@@ -514,26 +483,12 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
         )}
         {result && (
           <>
-            <div className="results-head">
+            <CoachBar coach={coach} loading={coachLoading} error={coachError} onAsk={comentar}>
               <p className="muted small">
                 via <b>{result.providerLabel}</b> · {result.model}
                 {result.fallbacks.length > 0 && <> · (pulou {result.fallbacks.length} por limite)</>}
               </p>
-              <button className="act coach-ask" disabled={coachLoading} onClick={comentar}>
-                {coachLoading ? "A IA está lendo…" : coach ? "Comentar de novo" : "Comentários da IA"}
-              </button>
-            </div>
-            {coachError && (
-              <p className="error" role="alert">
-                {coachError}
-              </p>
-            )}
-            {coach?.review.escolha && (
-              <p className="coach-verdict" role="status">
-                <span className="coach-tag">IA</span> Eu mandaria a <b>versão {coach.review.escolha}</b>
-                {coach.review.motivo && <>: {coach.review.motivo}</>}
-              </p>
-            )}
+            </CoachBar>
             {result.variations.map((variation, index) => (
               <ResultCard
                 key={`${result.texto}-${index}-${variation.length}`}
@@ -559,7 +514,7 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
                 versao={index + 1}
                 coach={coach?.review.notas[index]}
                 coachFor={coach?.textos[index]}
-                recommended={coach?.review.escolha === index + 1}
+                recommended={result.variations.length > 1 && coach?.review.escolha === index + 1}
                 onTone={(tom, atual) =>
                   requestTone({ tom, texto: atual, contexto: result.texto, settings, perfil, senha })
                 }
