@@ -139,6 +139,18 @@ export const ajusteRequestSchema = z.discriminatedUnion("acao", [
       ...ajusteBase,
     })
     .strip(),
+  z
+    .object({
+      acao: z.literal("comentario"),
+      texto: z.string().trim().min(1, "Cole a mensagem que você recebeu.").max(4000),
+      contexto: optionalText(1000).default(""),
+      respostas: z
+        .array(z.string().trim().min(1).max(2000))
+        .min(1, "Gere uma resposta antes de pedir comentário.")
+        .max(4),
+      ...ajusteBase,
+    })
+    .strip(),
 ]);
 
 export type AjusteRequest = z.infer<typeof ajusteRequestSchema>;
@@ -148,7 +160,7 @@ export function parseAjusteRequest(raw: unknown) {
 }
 
 export function normalizeAjusteRequest(data: AjusteRequest) {
-  if (data.acao === "analise") return data;
+  if (data.acao !== "tom") return data;
   return { ...data, tracos: sanitizeTraits(data.tracos) };
 }
 

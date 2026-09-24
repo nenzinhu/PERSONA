@@ -1,4 +1,5 @@
 import type { Reading, Tone } from "./adjust.ts";
+import type { CoachReview } from "./coach.ts";
 import { profileForRequest, type StyleProfile } from "./prompt.ts";
 import type { Settings } from "./types.ts";
 
@@ -65,6 +66,25 @@ export function requestReading(
       acao: "analise",
       texto: args.texto.slice(-4000),
       contexto: args.contexto.slice(-4000),
+      ...modelFields(args.settings),
+    },
+    args.senha,
+    signal,
+  );
+}
+
+/** Pede à IA um comentário sobre cada resposta: como soa, uma dica, um tom sugerido e qual ela mandaria. */
+export function requestCoach(
+  args: { texto: string; contexto: string; respostas: string[]; settings: Settings; senha: string },
+  signal?: AbortSignal,
+): Promise<CoachReview> {
+  return postJson<CoachReview>(
+    "/api/ajuste",
+    {
+      acao: "comentario",
+      texto: args.texto.slice(-4000),
+      contexto: args.contexto.slice(-1000),
+      respostas: args.respostas.slice(0, 4).map((resposta) => resposta.slice(0, 2000)),
       ...modelFields(args.settings),
     },
     args.senha,

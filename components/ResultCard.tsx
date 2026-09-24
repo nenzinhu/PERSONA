@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { TONE_LABELS, TONES, type Tone } from "@/lib/adjust";
+import type { CoachNote } from "@/lib/coach";
 import { humanize, type HumanizeOptions } from "@/lib/humanize";
 import { styleScore, type Fingerprint } from "@/lib/stylometry";
 import { isValidWhatsAppPhone } from "@/lib/whatsapp";
@@ -19,6 +20,14 @@ interface Props {
   onPrefer: (clean: string) => void;
   /** Reescreve o texto (sem erros de digitação) num tom; sem ela, os botões de tom não aparecem. */
   onTone?: (tom: Tone, texto: string) => Promise<string>;
+  /** Número da versão, para a IA se referir a ela. */
+  versao?: number;
+  /** Comentário da IA sobre esta versão. */
+  coach?: CoachNote;
+  /** Texto que a IA comentou; se a resposta mudou depois, o comentário fica marcado como antigo. */
+  coachFor?: string;
+  /** A IA mandaria esta. */
+  recommended?: boolean;
 }
 
 function scoreClass(score: number) {
@@ -36,6 +45,10 @@ export default function ResultCard({
   preferState,
   onPrefer,
   onTone,
+  versao,
+  coach,
+  coachFor,
+  recommended = false,
 }: Props) {
   const [seed, setSeed] = useState(baseSeed * 7919);
   const [edited, setEdited] = useState<string | null>(null);
@@ -74,6 +87,8 @@ export default function ResultCard({
   }
 
   useEffect(() => onShown(text), [text, onShown]);
+
+  const suggestedTone = coach?.tom ?? null;
 
   function notify(message: string) {
     setFlash(message);
@@ -115,6 +130,8 @@ export default function ResultCard({
   return (
     <article className={preferState === "chosen" ? "bubble-card chosen" : "bubble-card"}>
       <div className="card-meta">
+        {versao !== undefined && <span className="muted">v{versao}</span>}
+        {recommended && <span className="coach-pick">a IA mandaria esta</span>}
         {nota ? (
           <span className={scoreClass(nota.score)} title={nota.hints.join(" · ") || "Bem no seu jeito"}>
             parece você: <b>{nota.score}</b>
@@ -134,6 +151,29 @@ export default function ResultCard({
         aria-label="Resposta gerada"
       />
       {showRaw && <p className="raw">{current}</p>}
+      {coach && (coach.soa || coach.dica) && (
+        <aside className="coach" aria-label={`Comentário da IA sobre a versão ${versao ?? ""}`.trim()}>
+          <span className="coach-tag">IA</span>
+          <div className="coach-body">
+            {coach.soa && (
+              <p>
+                <span className="coach-label">soa</span> {coach.soa}
+              </p>
+            )}
+            {coach.dica && <p className="coach-tip">{coach.dica}</p>}
+            {coachFor !== undefined && coachFor !== text && (
+              <p className="muted small">Comentário sobre o texto anterior.</p>
+            )}
+            {suggestedTone && onTone && (
+              <button className="act tone" disabled={toneLoading !== null} onClick={() => mudarTom(suggestedTone)}>
+                {toneLoading === suggestedTone
+                  ? "Reescrevendo…"
+                  : `Aplicar: ${TONE_LABELS[suggestedTone].toLowerCase()}`}
+              </button>
+            )}
+          </div>
+        </aside>
+      )}
       {onTone && (
         <div className="tones" role="group" aria-label="Mudar o tom">
           {TONES.map((tom) => (

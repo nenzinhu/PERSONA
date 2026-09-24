@@ -1099,3 +1099,85 @@ code {
     transition: none !important;
   }
 }
+
+/* Comentários da IA: nota na margem de cada resposta. */
+.results-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px 12px;
+}
+.results-head p {
+  margin: 0;
+}
+.act.coach-ask {
+  border-style: dashed;
+}
+.coach-tag {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  background: var(--marker);
+  color: var(--marker-ink);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.coach > .coach-tag {
+  align-self: flex-start;
+  margin-top: 2px;
+}
+.coach-verdict {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  line-height: 1.3;
+}
+.coach-verdict .coach-tag {
+  vertical-align: 0.2em;
+  margin-right: 4px;
+}
+.coach-pick {
+  background: var(--marker);
+  color: var(--marker-ink);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.coach {
+  align-self: stretch;
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+}
+.coach-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+.coach-body p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+.coach-label {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-right: 4px;
+}
+.coach-body p.coach-tip {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.12rem;
+  line-height: 1.3;
+  color: var(--ink);
+}
+.coach-body .act.tone {
+  margin-top: 6px;
+}
