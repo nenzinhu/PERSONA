@@ -37,6 +37,12 @@ const providerEnum = z.enum([
   "anyapi",
   "orcarouter",
   "openrouter",
+  "together",
+  "cloudflare",
+  "cohere",
+  "huggingface",
+  "modelscope",
+  "aihubmix",
   "custom",
 ]);
 

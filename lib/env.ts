@@ -1,3 +1,4 @@
+import { baseUrlVars } from "./llm.ts";
 import { PROVIDERS, type ProviderId } from "./providers.ts";
 
 export interface ProviderEnvStatus {
@@ -10,11 +11,16 @@ function has(value: string | undefined) {
   return Boolean(value?.trim());
 }
 
+function baseUrlNeeds(provider: (typeof PROVIDERS)[number]): string[] {
+  if (!provider.defaultBaseUrl) return provider.envBaseUrl ? [provider.envBaseUrl] : [];
+  return baseUrlVars(provider);
+}
+
 export function providerEnvStatus(env: Record<string, string | undefined> = process.env): ProviderEnvStatus[] {
   return PROVIDERS.map((provider) => {
-    const missing = [provider.envKey, provider.envBaseUrl]
-      .filter((name): name is string => Boolean(name))
-      .filter((name) => !has(env[name]));
+    // A base URL só falta quando não há padrão, ou quando o padrão depende de outra env ausente.
+    const baseUrl = provider.envBaseUrl && has(env[provider.envBaseUrl]) ? [] : baseUrlNeeds(provider);
+    const missing = [provider.envKey, ...baseUrl].filter((name) => !has(env[name]));
     return {
       id: provider.id,
       configured: missing.length === 0,

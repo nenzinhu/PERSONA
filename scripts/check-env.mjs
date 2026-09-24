@@ -19,9 +19,15 @@ const providers = {
   nous: ["NOUS_API_KEY"],
   nvidia: ["NVIDIA_API_KEY"],
   mistral: ["MISTRAL_API_KEY"],
-  anyapi: ["ANYAPI_API_KEY", "ANYAPI_BASE_URL"],
-  orcarouter: ["ORCAROUTER_API_KEY", "ORCAROUTER_BASE_URL"],
+  anyapi: ["ANYAPI_API_KEY"],
+  orcarouter: ["ORCAROUTER_API_KEY"],
   openrouter: ["OPENROUTER_API_KEY"],
+  together: ["TOGETHER_API_KEY"],
+  cloudflare: ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"],
+  cohere: ["COHERE_API_KEY"],
+  huggingface: ["HUGGINGFACE_API_KEY"],
+  modelscope: ["MODELSCOPE_API_KEY"],
+  aihubmix: ["AIHUBMIX_API_KEY"],
   custom: ["CUSTOM_API_KEY", "CUSTOM_BASE_URL", "CUSTOM_MODELS"],
 };
 

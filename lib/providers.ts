@@ -5,7 +5,21 @@
 // As notas são estimativas de naturalidade em PT-BR informal. Modelos de código,
 // de domínio (saúde/finanças) ou muito pequenos recebem nota baixa de propósito.
 
-export type ProviderId = "groq" | "nous" | "nvidia" | "mistral" | "anyapi" | "orcarouter" | "openrouter" | "custom";
+export type ProviderId =
+  | "groq"
+  | "nous"
+  | "nvidia"
+  | "mistral"
+  | "anyapi"
+  | "orcarouter"
+  | "openrouter"
+  | "together"
+  | "cloudflare"
+  | "cohere"
+  | "huggingface"
+  | "modelscope"
+  | "aihubmix"
+  | "custom";
 export type ApiFormat = "openai" | "anthropic";
 
 /** Tipos de texto usados para recomendar o modelo. */
@@ -33,6 +47,7 @@ export interface ProviderInfo {
   format: ApiFormat;
   envKey: string;
   envBaseUrl?: string;
+  /** Pode conter `{VAR}`, trocado pelo valor da env (ex: o id da conta na Cloudflare). */
   defaultBaseUrl?: string;
   site: string;
   freeTier: string;
@@ -221,8 +236,9 @@ export const PROVIDERS: ProviderInfo[] = [
     format: "openai",
     envKey: "ANYAPI_API_KEY",
     envBaseUrl: "ANYAPI_BASE_URL",
-    site: "",
-    freeTier: "Endpoint compatível com OpenAI. Defina ANYAPI_BASE_URL com a URL do painel.",
+    defaultBaseUrl: "https://api.anyapi.ai/v1",
+    site: "https://anyapi.ai",
+    freeTier: "Endpoint compatível com OpenAI, com modelos :free.",
     models: [
       {
         id: "dots-studio/dots-3-note-preview:free",
@@ -246,8 +262,9 @@ export const PROVIDERS: ProviderInfo[] = [
     format: "openai",
     envKey: "ORCAROUTER_API_KEY",
     envBaseUrl: "ORCAROUTER_BASE_URL",
-    site: "",
-    freeTier: "Roteador compatível com OpenAI com modelos -free. Defina ORCAROUTER_BASE_URL.",
+    defaultBaseUrl: "https://api.orcarouter.ai/v1",
+    site: "https://orcarouter.ai",
+    freeTier: "Roteador compatível com OpenAI com modelos -free.",
     models: [
       {
         id: "deepseek/deepseek-v4-flash-free",
@@ -345,6 +362,198 @@ export const PROVIDERS: ProviderInfo[] = [
         note: CODE,
       },
       { id: "poolside/laguna-xs-2.1:free", label: "Laguna XS 2.1 (free)", scores: s(1, 1, 1, 2), speed: 2, note: CODE },
+    ],
+  },
+  {
+    id: "together",
+    label: "Together AI",
+    format: "openai",
+    envKey: "TOGETHER_API_KEY",
+    defaultBaseUrl: "https://api.together.xyz/v1",
+    site: "https://api.together.xyz/models",
+    freeTier: "Modelos com sufixo -Free, sem custo e com limite por minuto.",
+    models: [
+      {
+        id: "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+        label: "Llama 3.3 70B Turbo (free)",
+        scores: s(4, 4, 4, 4),
+        speed: 2,
+        note: "Bom PT-BR e natural; ótimo reserva grátis.",
+      },
+      {
+        id: "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free",
+        label: "DeepSeek R1 Distill 70B (free)",
+        scores: s(2, 4, 2, 3),
+        speed: 1,
+        note: "Raciocina antes de responder: lento para zap.",
+      },
+    ],
+  },
+  {
+    id: "cloudflare",
+    label: "Cloudflare Workers AI",
+    format: "openai",
+    envKey: "CLOUDFLARE_API_TOKEN",
+    defaultBaseUrl: "https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/ai/v1",
+    site: "https://dash.cloudflare.com/?to=/:account/ai/workers-ai",
+    freeTier: "10 mil neurons grátis por dia. Precisa também de CLOUDFLARE_ACCOUNT_ID.",
+    models: [
+      {
+        id: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        label: "Llama 3.3 70B Fast",
+        scores: s(4, 4, 4, 4),
+        speed: 3,
+        note: "Rápido e com PT-BR natural.",
+      },
+      {
+        id: "@cf/mistralai/mistral-small-3.1-24b-instruct",
+        label: "Mistral Small 3.1 24B",
+        scores: s(4, 3, 4, 4),
+        speed: 3,
+        note: "Tom solto; bom para casual.",
+      },
+      {
+        id: "@cf/meta/llama-4-scout-17b-16e-instruct",
+        label: "Llama 4 Scout 17B",
+        scores: s(3, 3, 3, 4),
+        speed: 3,
+        note: "Leve e multilíngue.",
+      },
+      {
+        id: "@cf/google/gemma-3-12b-it",
+        label: "Gemma 3 12B",
+        scores: s(3, 3, 3, 3),
+        speed: 3,
+        note: "Pequeno, mas escreve bem em português.",
+      },
+    ],
+  },
+  {
+    id: "cohere",
+    label: "Cohere",
+    format: "openai",
+    envKey: "COHERE_API_KEY",
+    defaultBaseUrl: "https://api.cohere.ai/compatibility/v1",
+    site: "https://dashboard.cohere.com/api-keys",
+    freeTier: "Chave de teste grátis (limite mensal de chamadas).",
+    models: [
+      {
+        id: "command-a-03-2025",
+        label: "Command A",
+        scores: s(4, 5, 4, 5),
+        speed: 2,
+        note: "Forte em argumentação e formal; PT-BR bom.",
+      },
+      {
+        id: "command-r7b-12-2024",
+        label: "Command R7B",
+        scores: s(3, 2, 3, 3),
+        speed: 3,
+        note: "Pequeno e rápido.",
+      },
+    ],
+  },
+  {
+    id: "huggingface",
+    label: "Hugging Face",
+    format: "openai",
+    envKey: "HUGGINGFACE_API_KEY",
+    defaultBaseUrl: "https://router.huggingface.co/v1",
+    site: "https://huggingface.co/settings/tokens",
+    freeTier: "Créditos mensais grátis no Inference Providers.",
+    models: [
+      {
+        id: "Qwen/Qwen3-235B-A22B-Instruct-2507",
+        label: "Qwen 3 235B",
+        scores: s(4, 5, 4, 5),
+        speed: 2,
+        note: "Muito capaz e multilíngue.",
+      },
+      {
+        id: "deepseek-ai/DeepSeek-V3-0324",
+        label: "DeepSeek V3",
+        scores: s(4, 5, 5, 4),
+        speed: 2,
+        note: "Imita bem o estilo; bom para persona.",
+      },
+      {
+        id: "meta-llama/Llama-3.3-70B-Instruct",
+        label: "Llama 3.3 70B",
+        scores: s(4, 4, 4, 4),
+        speed: 2,
+        note: "Equilibrado e natural.",
+      },
+      {
+        id: "google/gemma-3-27b-it",
+        label: "Gemma 3 27B",
+        scores: s(3, 3, 3, 4),
+        speed: 2,
+        note: "Bom português, um pouco formal.",
+      },
+    ],
+  },
+  {
+    id: "modelscope",
+    label: "ModelScope",
+    format: "openai",
+    envKey: "MODELSCOPE_API_KEY",
+    defaultBaseUrl: "https://api-inference.modelscope.cn/v1",
+    site: "https://modelscope.cn/my/myaccesstoken",
+    freeTier: "Chamadas grátis por dia (conta vinculada à Alibaba Cloud).",
+    models: [
+      {
+        id: "Qwen/Qwen3-235B-A22B-Instruct-2507",
+        label: "Qwen 3 235B",
+        scores: s(4, 5, 4, 5),
+        speed: 2,
+        note: "Muito capaz e multilíngue.",
+      },
+      {
+        id: "deepseek-ai/DeepSeek-V3.1",
+        label: "DeepSeek V3.1",
+        scores: s(4, 5, 5, 4),
+        speed: 2,
+        note: "Imita bem o estilo.",
+      },
+      {
+        id: "moonshotai/Kimi-K2-Instruct",
+        label: "Kimi K2",
+        scores: s(4, 4, 4, 4),
+        speed: 2,
+        note: "Escrita fluida.",
+      },
+      {
+        id: "Qwen/Qwen3-32B",
+        label: "Qwen 3 32B",
+        scores: s(3, 4, 3, 4),
+        speed: 2,
+        note: "Menor e mais rápido.",
+      },
+    ],
+  },
+  {
+    id: "aihubmix",
+    label: "AIHubMix",
+    format: "openai",
+    envKey: "AIHUBMIX_API_KEY",
+    defaultBaseUrl: "https://aihubmix.com/v1",
+    site: "https://aihubmix.com/models",
+    freeTier: "Roteador com modelos -free. Os ids mudam: confira em aihubmix.com/models e use AIHUBMIX_MODELS.",
+    models: [
+      {
+        id: "gemini-2.0-flash-free",
+        label: "Gemini 2.0 Flash (free)",
+        scores: s(4, 4, 4, 4),
+        speed: 3,
+        note: "Rápido e bom em PT-BR.",
+      },
+      {
+        id: "gpt-4.1-free",
+        label: "GPT-4.1 (free)",
+        scores: s(4, 4, 4, 5),
+        speed: 2,
+        note: "Equilibrado; um pouco certinho.",
+      },
     ],
   },
   {

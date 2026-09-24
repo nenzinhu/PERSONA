@@ -34,16 +34,22 @@ Next.js 15 (App Router) · sem banco de dados · deploy no Vercel.
 
 ## Provedores (todos com opção grátis)
 
-| Provedor        | Variável                                               | Melhor para                                                                                                                          |
-| --------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| **Groq**        | `GROQ_API_KEY`                                         | ⭐ **Padrão recomendado.** Zap curto: Qwen 3.6 27B, resposta em <1s. Também GPT-OSS 120B/20B, Compound, Compound Mini.               |
-| **Nous Portal** | `NOUS_API_KEY`                                         | ⭐ **DeepSeek V4 Flash**: o mais completo (opinião e imitar estilo). Também LongCat 2.0, Qwen 3.7 Flash, Mistral Nemo, Llama 3.1 8B… |
-| **NVIDIA NIM**  | `NVIDIA_API_KEY`                                       | Nemotron 3 Super 120B: rebater afirmações e textos formais.                                                                          |
-| **Mistral**     | `MISTRAL_API_KEY`                                      | Ministral 14B/8B/3B: PT-BR natural e rápido.                                                                                         |
-| **AnyAPI**      | `ANYAPI_API_KEY` + `ANYAPI_BASE_URL`                   | Dots 3 Note e Nemotron 3 Nano Omni (free).                                                                                           |
-| **OrcaRouter**  | `ORCAROUTER_API_KEY` + `ORCAROUTER_BASE_URL`           | DeepSeek V4 Flash, GLM 5.3 Flash e Hunyuan 3 (free).                                                                                 |
-| **OpenRouter**  | `OPENROUTER_API_KEY`                                   | Nemotron 3 Super (free), `openrouter/free` como reserva automática, Nex, Dots, LFM…                                                  |
-| **Meu modelo**  | `CUSTOM_API_KEY` + `CUSTOM_BASE_URL` + `CUSTOM_MODELS` | Seu fine-tune (Ollama/HF/Together). Vira o recomendado para persona.                                                                 |
+| Provedor         | Variável                                               | Melhor para                                                                                                                          |
+| ---------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Groq**         | `GROQ_API_KEY`                                         | ⭐ **Padrão recomendado.** Zap curto: Qwen 3.6 27B, resposta em <1s. Também GPT-OSS 120B/20B, Compound, Compound Mini.               |
+| **Nous Portal**  | `NOUS_API_KEY`                                         | ⭐ **DeepSeek V4 Flash**: o mais completo (opinião e imitar estilo). Também LongCat 2.0, Qwen 3.7 Flash, Mistral Nemo, Llama 3.1 8B… |
+| **NVIDIA NIM**   | `NVIDIA_API_KEY`                                       | Nemotron 3 Super 120B: rebater afirmações e textos formais.                                                                          |
+| **Mistral**      | `MISTRAL_API_KEY`                                      | Ministral 14B/8B/3B: PT-BR natural e rápido.                                                                                         |
+| **AnyAPI**       | `ANYAPI_API_KEY`                                       | Dots 3 Note e Nemotron 3 Nano Omni (free).                                                                                           |
+| **OrcaRouter**   | `ORCAROUTER_API_KEY`                                   | DeepSeek V4 Flash, GLM 5.3 Flash e Hunyuan 3 (free).                                                                                 |
+| **OpenRouter**   | `OPENROUTER_API_KEY`                                   | Nemotron 3 Super (free), `openrouter/free` como reserva automática, Nex, Dots, LFM…                                                  |
+| **Together AI**  | `TOGETHER_API_KEY`                                     | Llama 3.3 70B Turbo Free; DeepSeek R1 Distill 70B Free (lento).                                                                      |
+| **Cloudflare**   | `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`       | Workers AI (10 mil neurons/dia): Llama 3.3 70B Fast, Mistral Small 3.1, Llama 4 Scout, Gemma 3.                                      |
+| **Cohere**       | `COHERE_API_KEY`                                       | Command A (ótimo para rebater e formal) e Command R7B. Chave de teste grátis.                                                        |
+| **Hugging Face** | `HUGGINGFACE_API_KEY`                                  | Créditos mensais: Qwen 3 235B, DeepSeek V3, Llama 3.3 70B, Gemma 3 27B.                                                              |
+| **ModelScope**   | `MODELSCOPE_API_KEY`                                   | Chamadas grátis por dia: Qwen 3 235B, DeepSeek V3.1, Kimi K2, Qwen 3 32B.                                                            |
+| **AIHubMix**     | `AIHUBMIX_API_KEY`                                     | Modelos -free (Gemini 2.0 Flash, GPT-4.1). Ids mudam: ajuste com `AIHUBMIX_MODELS`.                                                  |
+| **Meu modelo**   | `CUSTOM_API_KEY` + `CUSTOM_BASE_URL` + `CUSTOM_MODELS` | Seu fine-tune (Ollama/HF/Together). Vira o recomendado para persona.                                                                 |
 
 Modelos de código (Codestral, Laguna, North Mini Code), de domínio (Ling Saúde/Finanças) e o ALLaM (árabe) ficam na lista, mas com nota baixa: não servem bem para conversa em PT-BR.
 

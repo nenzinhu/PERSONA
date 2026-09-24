@@ -27,3 +27,18 @@ test("recomenda modelos disponíveis por tipo de texto", () => {
   assert(result.length > 0);
   assert.equal(result[0]?.provider, "groq");
 });
+
+test("baseUrlFor troca {VAR} pela env e respeita a URL definida por env", async () => {
+  const { baseUrlFor } = await import("../lib/llm.ts");
+  const cloudflare = getProvider("cloudflare");
+  assert(cloudflare);
+  assert.equal(baseUrlFor(cloudflare, {}), undefined);
+  assert.equal(
+    baseUrlFor(cloudflare, { CLOUDFLARE_ACCOUNT_ID: "abc123" }),
+    "https://api.cloudflare.com/client/v4/accounts/abc123/ai/v1",
+  );
+  const anyapi = getProvider("anyapi");
+  assert(anyapi);
+  assert.equal(baseUrlFor(anyapi, {}), "https://api.anyapi.ai/v1");
+  assert.equal(baseUrlFor(anyapi, { ANYAPI_BASE_URL: "https://outro.ai/v1/" }), "https://outro.ai/v1");
+});

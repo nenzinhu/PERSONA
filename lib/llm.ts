@@ -2,9 +2,19 @@ import type { ProviderInfo } from "./providers.ts";
 
 type Env = Record<string, string | undefined>;
 
+/** Variáveis `{VAR}` que a URL padrão do provedor precisa (ex: CLOUDFLARE_ACCOUNT_ID). */
+export function baseUrlVars(p: ProviderInfo): string[] {
+  return [...(p.defaultBaseUrl ?? "").matchAll(/\{([A-Z0-9_]+)\}/g)].map((match) => match[1]);
+}
+
 export function baseUrlFor(p: ProviderInfo, env: Env): string | undefined {
   const fromEnv = p.envBaseUrl ? env[p.envBaseUrl]?.trim() : undefined;
-  return (fromEnv || p.defaultBaseUrl)?.replace(/\/+$/, "");
+  if (fromEnv) return fromEnv.replace(/\/+$/, "");
+  if (!p.defaultBaseUrl) return undefined;
+  if (baseUrlVars(p).some((name) => !env[name]?.trim())) return undefined;
+  return p.defaultBaseUrl
+    .replace(/\{([A-Z0-9_]+)\}/g, (_, name: string) => encodeURIComponent(env[name]?.trim() ?? ""))
+    .replace(/\/+$/, "");
 }
 
 export function isConfigured(p: ProviderInfo, env: Env): boolean {
