@@ -72,7 +72,7 @@ export default function CoachBar({ coach, loading, error, onAsk, children }: Pro
       <div className="results-head">
         {children}
         <button className="act coach-ask" disabled={loading} onClick={onAsk}>
-          {loading ? "A IA está lendo…" : coach ? "Comentar de novo" : "Comentários da IA"}
+          {loading ? "A IA está lendo…" : coach ? "Reavaliar respostas" : "Recomendar resposta"}
         </button>
       </div>
       {error && (

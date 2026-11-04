@@ -9,6 +9,7 @@ import { MIN_EXAMPLES, calibrate, fingerprint } from "@/lib/stylometry";
 import type { Preference } from "@/lib/dataset";
 import type { GeneratedHistoryItem, ProviderStatus, Settings } from "@/lib/types";
 import { requestTone } from "@/lib/api";
+import Icon from "./Icon";
 import CoachBar, { useCoach } from "./CoachBar";
 import { AudioButton } from "./MediaButtons";
 import Fader from "./Fader";
@@ -194,17 +195,21 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
   const h = settings.humanize;
 
   return (
-    <section className="grid">
-      <div className="card">
+    <section className="grid generator-grid">
+      <div className="card composer">
+        <div className="panel-heading">
+          <Icon name="message" />
+          <h2>O que te disseram?</h2>
+        </div>
         <label className="field">
           <span>{mode === "pergunta" ? "Pergunta que te fizeram" : "Afirmação que te mandaram"}</span>
           <textarea
             className="headline-input"
-            rows={2}
+            rows={5}
             value={texto}
             onChange={(event) => setTexto(event.target.value)}
             placeholder={
-              mode === "pergunta" ? "ex: vai na festa sábado?" : "ex: acho que esse time não ganha mais nada esse ano"
+              mode === "pergunta" ? "Cole aqui a pergunta que você recebeu…" : "Cole aqui a mensagem que você recebeu…"
             }
           />
         </label>
@@ -228,7 +233,12 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
             <span>Sua posição</span>
             <div className="seg">
               {STANCES.map((item) => (
-                <button key={item.id} className={stance === item.id ? "on" : ""} onClick={() => setStance(item.id)}>
+                <button
+                  key={item.id}
+                  aria-pressed={stance === item.id}
+                  className={stance === item.id ? "on" : ""}
+                  onClick={() => setStance(item.id)}
+                >
                   {item.label}
                 </button>
               ))}
@@ -242,6 +252,7 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
             {TEXT_KINDS.map((item) => (
               <button
                 key={item.id}
+                aria-pressed={settings.kind === item.id}
                 className={settings.kind === item.id ? "on" : ""}
                 onClick={() => set("kind", item.id)}
                 title={item.hint}
@@ -257,66 +268,6 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
           )}
         </div>
 
-        <div className="row">
-          <label className="field">
-            <span>Provedor</span>
-            <select
-              value={settings.provider}
-              onChange={(event) =>
-                setSettings((current) => ({
-                  ...current,
-                  provider: event.target.value as "auto" | ProviderId,
-                  model: "",
-                }))
-              }
-            >
-              <option value="auto">Automático (recomendado)</option>
-              {providers.map((provider) => (
-                <option key={provider.id} value={provider.id} disabled={!provider.configured}>
-                  {provider.label}
-                  {provider.configured ? "" : " — sem chave"}
-                </option>
-              ))}
-            </select>
-          </label>
-          {settings.provider === "custom" && (
-            <label className="field">
-              <span>Modelo</span>
-              <input
-                list="models-custom"
-                value={settings.model}
-                onChange={(event) => set("model", event.target.value)}
-                placeholder={rankedModels[0]?.id ?? "id do modelo"}
-              />
-              <datalist id="models-custom">
-                {rankedModels.map((model) => (
-                  <option key={model.id} value={model.id}>
-                    {model.label}
-                  </option>
-                ))}
-              </datalist>
-            </label>
-          )}
-          {settings.provider !== "auto" && settings.provider !== "custom" && (
-            <label className="field">
-              <span>Modelo</span>
-              <select value={settings.model} onChange={(event) => set("model", event.target.value)}>
-                <option value="">
-                  Melhor para {kindLabel}
-                  {rankedModels[0] ? `: ${rankedModels[0].label}` : ""}
-                </option>
-                {rankedModels.map((model) => (
-                  <option key={model.id} value={model.id}>
-                    {model.label} · {"★".repeat(model.scores[settings.kind])}
-                    {model.speed === 3 ? " · rápido" : ""}
-                  </option>
-                ))}
-              </select>
-              {selectedModel && <small className="muted">{selectedModel.note}</small>}
-            </label>
-          )}
-        </div>
-
         <details className="more" open={settings.tracos.length > 0}>
           <summary>Personalidade {settings.tracos.length > 0 && <em>({settings.tracos.join(", ")})</em>}</summary>
           <p className="muted small">Escolha até {MAX_TRAITS} traços.</p>
@@ -325,6 +276,7 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
               <button
                 key={trait}
                 className={settings.tracos.includes(trait) ? "chip pos on" : "chip pos"}
+                aria-pressed={settings.tracos.includes(trait)}
                 onClick={() => toggleTrait(trait)}
               >
                 {trait}
@@ -336,6 +288,7 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
               <button
                 key={trait}
                 className={settings.tracos.includes(trait) ? "chip neg on" : "chip neg"}
+                aria-pressed={settings.tracos.includes(trait)}
                 onClick={() => toggleTrait(trait)}
               >
                 {trait}
@@ -344,8 +297,8 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
           </div>
         </details>
 
-        <details className="more" open>
-          <summary>Parecer que fui eu</summary>
+        <details className="more">
+          <summary>Ajustes do meu jeito</summary>
           <div className="calibrate">
             <button
               className="act"
@@ -418,9 +371,72 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
           </label>
         </details>
 
-        <div className="row">
+        <details className="more">
+          <summary>Modelo de inteligência</summary>{" "}
+          <div className="row">
+            <label className="field">
+              <span>Provedor</span>
+              <select
+                value={settings.provider}
+                onChange={(event) =>
+                  setSettings((current) => ({
+                    ...current,
+                    provider: event.target.value as "auto" | ProviderId,
+                    model: "",
+                  }))
+                }
+              >
+                <option value="auto">Automático (recomendado)</option>
+                {providers.map((provider) => (
+                  <option key={provider.id} value={provider.id} disabled={!provider.configured}>
+                    {provider.label}
+                    {provider.configured ? "" : " — sem chave"}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {settings.provider === "custom" && (
+              <label className="field">
+                <span>Modelo</span>
+                <input
+                  list="models-custom"
+                  value={settings.model}
+                  onChange={(event) => set("model", event.target.value)}
+                  placeholder={rankedModels[0]?.id ?? "id do modelo"}
+                />
+                <datalist id="models-custom">
+                  {rankedModels.map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.label}
+                    </option>
+                  ))}
+                </datalist>
+              </label>
+            )}
+            {settings.provider !== "auto" && settings.provider !== "custom" && (
+              <label className="field">
+                <span>Modelo</span>
+                <select value={settings.model} onChange={(event) => set("model", event.target.value)}>
+                  <option value="">
+                    Melhor para {kindLabel}
+                    {rankedModels[0] ? `: ${rankedModels[0].label}` : ""}
+                  </option>
+                  {rankedModels.map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.label} · {"★".repeat(model.scores[settings.kind])}
+                      {model.speed === 3 ? " · rápido" : ""}
+                    </option>
+                  ))}
+                </select>
+                {selectedModel && <small className="muted">{selectedModel.note}</small>}
+              </label>
+            )}
+          </div>
+        </details>
+        <div className="row generate-actions">
           <button className="primary" disabled={loading || !texto.trim()} onClick={gerar}>
-            {loading ? "Gerando…" : "Gerar resposta"}
+            <Icon name="arrow" />
+            {loading ? "Preparando respostas…" : "Gerar respostas"}
           </button>
           {loading && (
             <button className="act" onClick={() => abortRef.current?.abort()}>
@@ -471,13 +487,28 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
         )}
       </div>
 
-      <div className="results" aria-live="polite">
+      <div className="results" aria-live="polite" aria-busy={loading}>
+        <div className="panel-heading">
+          <Icon name="reply" />
+          <h2>Suas respostas</h2>
+          <span className="panel-caption">Do seu jeito</span>
+        </div>
+        {loading && (
+          <div className="generation-status" role="status">
+            <span className="loading-dot" />
+            Preparando suas respostas. Você pode cancelar a qualquer momento.
+          </div>
+        )}
         {!result && !loading && (
           <div className="empty">
-            <p>As respostas aparecem aqui.</p>
+            <span className="empty-symbol">
+              <Icon name="conversation" />
+            </span>
+            <h3>Uma resposta que parece sua.</h3>
+            <p>Cole a mensagem ao lado e escolha como quer responder.</p>
             <p className="muted small">
-              Dica: edite a melhor e toque em <b>Salvar como meu exemplo</b>. Quanto mais exemplos seus, mais parecido
-              com você fica.
+              Use <b>Analisar mensagem</b> para entender a intenção. Depois de gerar, peça uma recomendação de qual
+              resposta enviar.
             </p>
           </div>
         )}

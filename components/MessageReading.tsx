@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Icon from "./Icon";
 import type { Reading } from "@/lib/adjust";
 import { errorText, requestReading } from "@/lib/api";
 import type { Settings } from "@/lib/types";
@@ -16,7 +17,7 @@ interface Props {
 
 const ROWS: { key: keyof Reading; label: string }[] = [
   { key: "emocao", label: "Emoção" },
-  { key: "intencao", label: "O que ela quer" },
+  { key: "intencao", label: "Intenção" },
   { key: "entrelinhas", label: "Entrelinhas" },
   { key: "cuidado", label: "Cuidado" },
 ];
@@ -54,7 +55,8 @@ export default function MessageReading({ texto, contexto = "", settings, senha }
   return (
     <div className="reading">
       <button className="act" disabled={loading || !texto.trim()} onClick={ler}>
-        {loading ? "Lendo…" : "🌡️ Ler a mensagem"}
+        <Icon name="analyze" />
+        {loading ? "Analisando…" : "Analisar mensagem"}
       </button>
       {error && (
         <p className="error" role="alert">

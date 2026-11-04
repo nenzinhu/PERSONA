@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Icon from "@/components/Icon";
 import Generator from "@/components/Generator";
 import StyleTrainer from "@/components/StyleTrainer";
 import ModelGuide from "@/components/ModelGuide";
@@ -12,13 +13,43 @@ import { DEFAULT_PROFILE, DEFAULT_SETTINGS, type ProviderStatus } from "@/lib/ty
 type Tab = "pergunta" | "afirmacao" | "conversa" | "treino" | "estilo" | "modelos";
 type Theme = "system" | "light" | "dark";
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: "pergunta", label: "Pergunta" },
-  { id: "afirmacao", label: "Afirmação" },
-  { id: "conversa", label: "Conversa" },
-  { id: "treino", label: "Treino" },
-  { id: "estilo", label: "Meu estilo" },
-  { id: "modelos", label: "Modelos" },
+const TABS: { id: Tab; label: string; icon: string; description: string }[] = [
+  {
+    id: "pergunta",
+    label: "Responder pergunta",
+    icon: "message",
+    description: "Encontre as palavras certas, do seu jeito.",
+  },
+  {
+    id: "afirmacao",
+    label: "Responder afirmação",
+    icon: "reply",
+    description: "Escolha sua posição e construa uma resposta.",
+  },
+  {
+    id: "conversa",
+    label: "Analisar conversa",
+    icon: "conversation",
+    description: "Entenda o contexto antes de dar o próximo passo.",
+  },
+  {
+    id: "treino",
+    label: "Treinar conversa",
+    icon: "practice",
+    description: "Ensaie uma conversa difícil com espaço para tentar.",
+  },
+  {
+    id: "estilo",
+    label: "Meu estilo",
+    icon: "profile",
+    description: "Ensine ao Persona o que faz uma resposta parecer sua.",
+  },
+  {
+    id: "modelos",
+    label: "Modelos e conexões",
+    icon: "settings",
+    description: "Escolha a inteligência que acompanha sua conversa.",
+  },
 ];
 
 const THEMES: { id: Theme; label: string }[] = [
@@ -71,16 +102,66 @@ export default function Home() {
   }, [theme]);
 
   return (
-    <main className="shell">
-      <header className="top">
-        <div>
-          <h1 className="brand">persona</h1>
-          <p className="sub">
-            Gerador de respostas do seu jeito: abreviações, erros de digitação e a sua personalidade.
-          </p>
+    <div className="app-layout">
+      <a className="skip-link" href="#workspace">
+        Ir para o conteúdo
+      </a>
+      <aside className="sidebar">
+        <a
+          href="#workspace"
+          className="brand-lockup"
+          aria-label="Persona, início"
+          onClick={() => setTab({ v: "pergunta" })}
+        >
+          <span className="brand-symbol">
+            <Icon name="persona" />
+          </span>
+          <span className="brand">
+            persona<span className="brand-dot">.</span>
+          </span>
+        </a>
+        <p className="sidebar-caption">Sua voz, em cada conversa.</p>
+        <nav className="workspace-nav" aria-label="Áreas do Persona">
+          {TABS.map((item, index) => (
+            <button
+              key={item.id}
+              className={tab.v === item.id ? "nav-item active" : "nav-item"}
+              aria-current={tab.v === item.id ? "page" : undefined}
+              onClick={() => setTab({ v: item.id })}
+            >
+              <Icon name={item.icon} />
+              <span>{item.label}</span>
+              {index === 0 && <span className="nav-indicator" />}
+            </button>
+          ))}
+        </nav>
+        <div className="sidebar-bottom">
+          <div className="style-note">
+            <Icon name="profile" />
+            <div>
+              <strong>Quanto mais seu, melhor.</strong>
+              <p>Seus exemplos ensinam o Persona a escrever como você.</p>
+              <button onClick={() => setTab({ v: "estilo" })}>
+                Ajustar meu estilo <Icon name="arrow" />
+              </button>
+            </div>
+          </div>
+          <div className="profile-summary">
+            <span className="profile-avatar">{perfil.nome?.trim().slice(0, 1).toUpperCase() || "P"}</span>
+            <div>
+              <strong>{perfil.nome || "Meu Persona"}</strong>
+              <span>{perfil.exemplos.length} exemplos de escrita</span>
+            </div>
+            <Icon name="lock" />
+          </div>
         </div>
-        <div className="top-actions">
-          <span className="pill">{perfil.exemplos.length} exemplos seus</span>
+      </aside>
+      <main className="shell" id="workspace" tabIndex={-1}>
+        <header className="workspace-top">
+          <span>
+            Meu espaço <span className="breadcrumb-separator">/</span>{" "}
+            <strong>{TABS.find((item) => item.id === tab.v)?.label}</strong>
+          </span>
           <div className="theme-switcher" role="group" aria-label="Tema">
             {THEMES.map((item) => (
               <button
@@ -93,78 +174,74 @@ export default function Home() {
               </button>
             ))}
           </div>
+        </header>
+        <div className="page-heading">
+          <div>
+            <h1>{TABS.find((item) => item.id === tab.v)?.label}</h1>
+            <p>{TABS.find((item) => item.id === tab.v)?.description}</p>
+          </div>
+          <span className="private-note">
+            <Icon name="lock" />
+            Seu espaço pessoal
+          </span>
         </div>
-      </header>
+        {providersLoading && (
+          <p className="muted small" role="status">
+            Carregando provedores…
+          </p>
+        )}
+        {providersError && (
+          <div className="provider-status error" role="alert">
+            Não consegui carregar os provedores.{" "}
+            <button className="link-button" onClick={() => setProvidersAttempt((current) => current + 1)}>
+              Tentar novamente
+            </button>
+          </div>
+        )}
 
-      <nav className="tabs" role="tablist">
-        {TABS.map((item) => (
-          <button
-            key={item.id}
-            role="tab"
-            aria-selected={tab.v === item.id}
-            className={tab.v === item.id ? "tab active" : "tab"}
-            onClick={() => setTab({ v: item.id })}
-          >
-            {item.label}
-          </button>
-        ))}
-      </nav>
+        {needsPassword && (
+          <label className="field inline-pass">
+            <span>Senha do app</span>
+            <input
+              type="password"
+              value={senha.v}
+              onChange={(event) => setSenha({ v: event.target.value })}
+              placeholder="definida em APP_PASSWORD"
+            />
+          </label>
+        )}
 
-      {providersLoading && (
-        <p className="muted small" role="status">
-          Carregando provedores…
-        </p>
-      )}
-      {providersError && (
-        <div className="provider-status error" role="alert">
-          Não consegui carregar os provedores.{" "}
-          <button className="link-button" onClick={() => setProvidersAttempt((current) => current + 1)}>
-            Tentar novamente
-          </button>
-        </div>
-      )}
-
-      {needsPassword && (
-        <label className="field inline-pass">
-          <span>Senha do app</span>
-          <input
-            type="password"
-            value={senha.v}
-            onChange={(event) => setSenha({ v: event.target.value })}
-            placeholder="definida em APP_PASSWORD"
+        {(tab.v === "pergunta" || tab.v === "afirmacao") && (
+          <Generator
+            key={tab.v}
+            mode={tab.v}
+            settings={settings}
+            setSettings={setSettings}
+            perfil={perfil}
+            setPerfil={setPerfil}
+            providers={providers}
+            senha={senha.v}
           />
-        </label>
-      )}
+        )}
+        {tab.v === "conversa" && (
+          <Conversation settings={settings} perfil={perfil} setPerfil={setPerfil} senha={senha.v} />
+        )}
+        {tab.v === "treino" && <Simulator settings={settings} perfil={perfil} senha={senha.v} />}
+        {tab.v === "estilo" && <StyleTrainer perfil={perfil} setPerfil={setPerfil} />}
+        {tab.v === "modelos" && (
+          <ModelGuide
+            providers={providers}
+            settings={settings}
+            setSettings={setSettings}
+            goTo={() => setTab({ v: "pergunta" })}
+          />
+        )}
 
-      {(tab.v === "pergunta" || tab.v === "afirmacao") && (
-        <Generator
-          key={tab.v}
-          mode={tab.v}
-          settings={settings}
-          setSettings={setSettings}
-          perfil={perfil}
-          setPerfil={setPerfil}
-          providers={providers}
-          senha={senha.v}
-        />
-      )}
-      {tab.v === "conversa" && (
-        <Conversation settings={settings} perfil={perfil} setPerfil={setPerfil} senha={senha.v} />
-      )}
-      {tab.v === "treino" && <Simulator settings={settings} perfil={perfil} senha={senha.v} />}
-      {tab.v === "estilo" && <StyleTrainer perfil={perfil} setPerfil={setPerfil} />}
-      {tab.v === "modelos" && (
-        <ModelGuide
-          providers={providers}
-          settings={settings}
-          setSettings={setSettings}
-          goTo={() => setTab({ v: "pergunta" })}
-        />
-      )}
-
-      <footer className="foot">
-        Seu perfil e exemplos ficam só neste navegador. As chaves de API ficam no servidor.
-      </footer>
-    </main>
+        <footer className="foot">
+          <Icon name="lock" /> Seu perfil e exemplos ficam neste navegador. As mensagens são enviadas ao provedor de IA
+          para análise.
+        </footer>
+      </main>
+    </div>
   );
 }

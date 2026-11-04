@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "./Icon";
 import { useRef, useState } from "react";
 import { errorText, postJson } from "@/lib/api";
 import { isAudioFile, MAX_AUDIO_BYTES, MAX_IMAGE_CHARS, MAX_IMAGES } from "@/lib/media";
@@ -69,7 +70,8 @@ export function AudioButton({ senha, onText }: Props) {
   return (
     <span className="media">
       <button className="act" disabled={loading} onClick={() => inputRef.current?.click()}>
-        {loading ? "Transcrevendo…" : "🎤 Áudio"}
+        <Icon name="audio" />
+        {loading ? "Transcrevendo…" : "Áudio"}
       </button>
       <input
         ref={inputRef}
@@ -110,7 +112,8 @@ export function PrintButton({ senha, onText }: Props) {
   return (
     <span className="media">
       <button className="act" disabled={loading} onClick={() => inputRef.current?.click()}>
-        {loading ? "Lendo print…" : "📷 Print"}
+        <Icon name="image" />
+        {loading ? "Lendo print…" : "Print"}
       </button>
       <input
         ref={inputRef}
