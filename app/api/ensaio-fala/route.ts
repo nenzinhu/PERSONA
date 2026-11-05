@@ -17,7 +17,7 @@ export function POST(req: Request) {
     shape: (raw) => {
       const review = parseSpeechReview(raw);
       if (!review) throw new Error("A revisão não veio no formato esperado.");
-      return review;
+      return { ...review };
     },
   });
 }

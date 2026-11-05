@@ -116,7 +116,7 @@ export default function ServiceOrderReport() {
       ...(photo ? { files: [photo] } : {}),
     };
     let canShareFiles = !photo;
-    if (photo && navigator.share && navigator.canShare) {
+    if (typeof navigator.share === "function" && typeof navigator.canShare === "function") {
       try {
         canShareFiles = navigator.canShare({ files: [photo] });
       } catch {
@@ -124,7 +124,7 @@ export default function ServiceOrderReport() {
       }
     }
 
-    if (navigator.share && canShareFiles) {
+    if (typeof navigator.share === "function" && canShareFiles) {
       try {
         await navigator.share(shareData);
         setNotice(
