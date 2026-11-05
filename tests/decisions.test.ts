@@ -109,3 +109,11 @@ test("malformed or excessive model output is rejected rather than presented", ()
     parseDecisionOutput(JSON.stringify({ resumo: "x", observacoes: [{ tipo: "inventado" }] }), parsed()),
   );
 });
+
+test("the psychological prompt applies to generated replies and preserves the JSON contract", () => {
+  const review = parsed();
+  const reply = buildDecisionMessages({ ...review, acao: "resposta" });
+  assert.match(reply.system, /5 lentes cognitivas/);
+  assert.match(reply.system, /somente JSON válido/);
+  assert.doesNotMatch(buildDecisionMessages(review).system, /5 lentes cognitivas/);
+});

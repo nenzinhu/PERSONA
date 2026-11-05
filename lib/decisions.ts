@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { generateRequestSchema } from "./validation.ts";
+import { PSYCHOLOGICAL_SYSTEM_PROMPT_HEADER } from "./personaPrompts.ts";
 
 export const DECISION_ACTIONS = ["resposta", "conferir", "pendencias", "conflitos"] as const;
 export type DecisionAction = (typeof DECISION_ACTIONS)[number];
@@ -93,6 +94,7 @@ export function buildDecisionMessages(input: DecisionInput) {
       acao === "resposta"
         ? "Gere uma única resposta breve no estilo fornecido. Encerrar não é convidar a recomeçar; recusar não é prometer depois."
         : "Não reescreva toda a conversa nem invente problemas. Sem evidência de problema ou pendência, retorne a lista vazia.",
+      ...(acao === "resposta" ? [PSYCHOLOGICAL_SYSTEM_PROMPT_HEADER.trim()] : []),
       `Ação: ${acao}. Responda somente JSON válido, sem cercas Markdown, seguindo: ${formats[acao]}`,
     ].join("\n"),
     messages: [

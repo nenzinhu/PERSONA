@@ -18,6 +18,10 @@ import {
 import type { Settings } from "@/lib/types";
 import type { StyleProfile } from "@/lib/prompt";
 import Icon from "./Icon";
+import { FranklPauseModal } from "./cognitive/FranklPauseModal";
+import { DistortionAlert } from "./cognitive/DistortionAlert";
+import { analyzeDraftDistortions } from "@/lib/cognitive/cognitiveDistortions";
+import { calculateEmotionalLoad } from "@/lib/cognitive/franklPause";
 
 const INITIAL_FORM = {
   assunto: "",
@@ -122,6 +126,7 @@ export default function DecisionWorkspace({
   const [privacy, setPrivacy] = useSessionState("decision-privacy", INITIAL_PRIVACY);
   const [saved, setSaved] = useLocalState<SavedPending[]>("decision-pending", []);
   const [prepared, setPrepared] = useState<Prepared | null>(null);
+  const [pause, setPause] = useState<string | null>(null);
   const [results, setResults] = useState<Partial<Record<DecisionAction, DecisionResult>>>({});
   const [spanResult, setSpanResult] = useState<SpanResult | null>(null);
   const [loading, setLoading] = useState<DecisionAction | null>(null);
@@ -131,6 +136,7 @@ export default function DecisionWorkspace({
   const abort = useRef<AbortController | null>(null);
   const revision = useRef(0);
   const previewRef = useRef<HTMLDivElement>(null);
+  const draftRef = useRef<HTMLTextAreaElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const validSaved = saved.filter(
     (item) =>
@@ -143,6 +149,7 @@ export default function DecisionWorkspace({
     abort.current?.abort();
     abort.current = null;
     setPrepared(null);
+    setPause(null);
     setResults({});
     setSpanResult(null);
     setLoading(null);
@@ -164,6 +171,7 @@ export default function DecisionWorkspace({
     abort.current = null;
     setLoading(null);
     setPrepared(null);
+    setPause(null);
     setResults({});
     setSpanResult(null);
   }, [settings.provider, settings.model, settings.kind, settings.temperatura]);
@@ -171,6 +179,7 @@ export default function DecisionWorkspace({
   function prepare(acao: DecisionAction, span = false) {
     setError("");
     setPrepared(null);
+    setPause(null);
     setNotice("");
     try {
       const memorias = form.usarMemorias
@@ -216,13 +225,32 @@ export default function DecisionWorkspace({
     }
   }
 
+  function confirmSend() {
+    if (!prepared || prepared.revision !== revision.current || abort.current) return;
+    if (prepared.input.acao === "resposta") {
+      const load = calculateEmotionalLoad([form.fonteA, form.fonteB].join("\n"), form.rascunho);
+      if (load.score >= 50) {
+        setPause(load.reason ?? "Revise a intenção antes de enviar à IA.");
+        return;
+      }
+    }
+    void send();
+  }
+
+  function reviewDraft() {
+    setPause(null);
+    setPrepared(null);
+    requestAnimationFrame(() => draftRef.current?.focus());
+  }
+
   async function send() {
-    if (!prepared || prepared.revision !== revision.current || loading) return;
+    if (!prepared || prepared.revision !== revision.current || abort.current) return;
     const snapshot = prepared;
     const controller = new AbortController();
     abort.current = controller;
     setLoading(snapshot.input.acao);
     setPrepared(null);
+    setPause(null);
     setError("");
     try {
       if (snapshot.span) {
@@ -522,6 +550,7 @@ export default function DecisionWorkspace({
           <label className="field">
             <span>Rascunho para editar ou conferir</span>
             <textarea
+              ref={draftRef}
               rows={6}
               maxLength={4000}
               value={form.rascunho}
@@ -529,6 +558,7 @@ export default function DecisionWorkspace({
               placeholder="Escreva sua resposta ou prepare uma com o Persona…"
             />
           </label>
+          <DistortionAlert distortions={analyzeDraftDistortions(form.rascunho)} />
           <div className="row">
             <button
               className="act"
@@ -601,7 +631,7 @@ export default function DecisionWorkspace({
                 . Nenhum envio acontece antes da confirmação.
               </p>
               <div className="row">
-                <button className="primary" onClick={send}>
+                <button className="primary" onClick={confirmSend}>
                   Confirmar envio à IA
                 </button>
                 <button className="act" onClick={() => setPrepared(null)}>
@@ -609,6 +639,9 @@ export default function DecisionWorkspace({
                 </button>
               </div>
             </div>
+          )}
+          {pause && prepared && (
+            <FranklPauseModal reason={pause} onCancel={reviewDraft} onConfirm={() => void send()} />
           )}
           {loading && (
             <div className="generation-status" role="status">
