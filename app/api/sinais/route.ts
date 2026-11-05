@@ -45,7 +45,7 @@ export async function POST(req: Request) {
           : status === 401
             ? "Não foi possível autorizar a análise."
             : "Serviço de sinais indisponível.";
-      return NextResponse.json({ error }, { status, headers });
+      return NextResponse.json({ error, upstreamStatus: response.status }, { status, headers });
     }
     const scores = parseSpanResponse(await response.json());
     return NextResponse.json({ scores, model: SPAN_MODEL }, { headers });
