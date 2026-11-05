@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import DecisionWorkspace from "@/components/DecisionWorkspace";
+import InstallApp from "@/components/InstallApp";
 import Icon from "@/components/Icon";
 import Generator from "@/components/Generator";
 import StyleTrainer from "@/components/StyleTrainer";
@@ -10,10 +12,16 @@ import Simulator from "@/components/Simulator";
 import { useLocalState, useSessionState } from "@/lib/store";
 import { DEFAULT_PROFILE, DEFAULT_SETTINGS, type ProviderStatus } from "@/lib/types";
 
-type Tab = "pergunta" | "afirmacao" | "conversa" | "treino" | "estilo" | "modelos";
+type Tab = "decisoes" | "pergunta" | "afirmacao" | "conversa" | "treino" | "estilo" | "modelos";
 type Theme = "system" | "light" | "dark";
 
 const TABS: { id: Tab; label: string; icon: string; description: string }[] = [
+  {
+    id: "decisoes",
+    label: "Decidir e responder",
+    icon: "analyze",
+    description: "Seu objetivo primeiro. Depois, as palavras certas.",
+  },
   {
     id: "pergunta",
     label: "Responder pergunta",
@@ -59,7 +67,7 @@ const THEMES: { id: Theme; label: string }[] = [
 ];
 
 export default function Home() {
-  const [tab, setTab] = useLocalState<{ v: Tab }>("tab", { v: "pergunta" });
+  const [tab, setTab] = useLocalState<{ v: Tab }>("tab", { v: "decisoes" });
   const [settings, setSettings] = useLocalState("settings", DEFAULT_SETTINGS);
   const [perfil, setPerfil] = useLocalState("perfil", DEFAULT_PROFILE);
   const [senha, setSenha] = useSessionState("senha", { v: "" });
@@ -121,6 +129,7 @@ export default function Home() {
           </span>
         </a>
         <p className="sidebar-caption">Sua voz, em cada conversa.</p>
+        <InstallApp />
         <nav className="workspace-nav" aria-label="Áreas do Persona">
           {TABS.map((item, index) => (
             <button
@@ -211,6 +220,14 @@ export default function Home() {
           </label>
         )}
 
+        {tab.v === "decisoes" && (
+          <DecisionWorkspace
+            settings={settings}
+            perfil={perfil}
+            senha={senha.v}
+            openRouterReady={providers.some((provider) => provider.id === "openrouter" && provider.configured)}
+          />
+        )}
         {(tab.v === "pergunta" || tab.v === "afirmacao") && (
           <Generator
             key={tab.v}
@@ -234,6 +251,7 @@ export default function Home() {
             settings={settings}
             setSettings={setSettings}
             goTo={() => setTab({ v: "pergunta" })}
+            goToDecisions={() => setTab({ v: "decisoes" })}
           />
         )}
 

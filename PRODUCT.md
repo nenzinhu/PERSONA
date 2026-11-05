@@ -20,7 +20,7 @@ Paste a question, statement, or conversation; optionally analyze intention and e
 
 ## Capabilities and Constraints
 
-Existing Next.js app with six views: Pergunta, Afirmação, Conversa, Treino, Meu estilo, Modelos. Preserve provider integration, local profile/history, theme preference, audio, screenshot import, simulation, and export. This task changes layout and visual hierarchy; new military-specific behavior is outside this change.
+Existing Next.js app with seven views: Decidir e responder, Pergunta, Afirmação, Conversa, Treino, Meu estilo, Modelos. Preserve provider integration, local profile/history, theme preference, audio, screenshot import, simulation, and export. The decision area adds explicit intent/limits, grounded draft review, user-confirmed pending records scoped by subject, source conflict comparison, and reviewed local alias substitution. Aliases apply only to this area. No authority or military rules are inferred. An optional Span-01 Lite evaluator uses the OpenRouter Decisions API. Installation is available as a PWA; AI requires a network connection.
 
 ## Brand Commitments
 

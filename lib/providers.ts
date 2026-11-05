@@ -76,11 +76,11 @@ export const PROVIDERS: ProviderInfo[] = [
     freeTier: "Grátis com limite por minuto/dia. O mais rápido de todos.",
     models: [
       {
-        id: "qwen/qwen3.6-27b",
-        label: "Qwen 3.6 27B",
+        id: "qwen/qwen3.8-27b",
+        label: "Qwen 3.8 27B (preview)",
         scores: s(5, 4, 4, 4),
         speed: 3,
-        note: "Rápido e com PT-BR natural. Melhor escolha para zap curto.",
+        note: "Preview: rápido e multilíngue para texto curto. Disponibilidade pode mudar.",
       },
       {
         id: "openai/gpt-oss-120b",
@@ -89,33 +89,13 @@ export const PROVIDERS: ProviderInfo[] = [
         speed: 3,
         note: "Raciocina bem; ótimo para formal. Tende a soar ‘certinho’.",
       },
-      {
-        id: "groq/compound",
-        label: "Groq Compound",
-        scores: s(3, 4, 3, 4),
-        speed: 2,
-        note: "Sistema com busca na web; útil quando a resposta precisa de fato atual.",
-      },
-      {
-        id: "groq/compound-mini",
-        label: "Groq Compound Mini",
-        scores: s(3, 3, 2, 3),
-        speed: 3,
-        note: "Versão leve do Compound.",
-      },
+
       {
         id: "openai/gpt-oss-20b",
         label: "GPT-OSS 20B",
         scores: s(3, 3, 2, 4),
         speed: 3,
         note: "Leve e rápido, mas genérico.",
-      },
-      {
-        id: "allam-2-7b",
-        label: "ALLaM 2 7B",
-        scores: s(1, 1, 1, 1),
-        speed: 3,
-        note: "Focado em árabe: evite para PT-BR.",
       },
     ],
   },
@@ -299,6 +279,27 @@ export const PROVIDERS: ProviderInfo[] = [
     freeTier: "Modelos :free. Limite diário baixo sem créditos.",
     models: [
       {
+        id: "google/gemma-4-31b-it:free",
+        label: "Gemma 4 31B (free)",
+        scores: s(4, 5, 4, 5),
+        speed: 2,
+        note: "Multilíngue para redação e análise de documentos; recomendação editorial, sem benchmark próprio de PT-BR.",
+      },
+      {
+        id: "google/gemma-4-26b-a4b-it:free",
+        label: "Gemma 4 26B A4B (free)",
+        scores: s(4, 4, 4, 4),
+        speed: 3,
+        note: "Alternativa eficiente para rascunhos e revisão; confira tom e naturalidade em PT-BR.",
+      },
+      {
+        id: "nvidia/nemotron-3.5-super-vl:free",
+        label: "Nemotron 3.5 Super VL (free)",
+        scores: s(3, 5, 3, 5),
+        speed: 1,
+        note: "Para análise de documentos e textos extensos; raciocínio pode aumentar a espera.",
+      },
+      {
         id: "nvidia/nemotron-3-super-120b-a12b:free",
         label: "Nemotron 3 Super 120B (free)",
         scores: s(3, 5, 3, 5),
@@ -324,7 +325,7 @@ export const PROVIDERS: ProviderInfo[] = [
         label: "Dots 3 Note (free)",
         scores: s(3, 3, 3, 3),
         speed: 2,
-        note: "Preview; qualidade variável.",
+        note: "Preview para análise de contexto extenso e revisão; saída prevista em 31/12/2026. Confira a qualidade em PT-BR.",
       },
       {
         id: "nex-agi/nex-n2.5-mini:free",
@@ -438,11 +439,32 @@ export const PROVIDERS: ProviderInfo[] = [
     freeTier: "Chave de teste grátis (limite mensal de chamadas).",
     models: [
       {
-        id: "command-a-03-2025",
-        label: "Command A",
-        scores: s(4, 5, 4, 5),
+        id: "command-a-plus-05-2026",
+        label: "Command A+ · redação e relatórios",
+        scores: s(4, 4, 4, 5),
         speed: 2,
-        note: "Forte em argumentação e formal; PT-BR bom.",
+        note: "Priorize para redação, relatórios e textos de trabalho em português.",
+      },
+      {
+        id: "command-a-reasoning-08-2025",
+        label: "Command A Reasoning · análise",
+        scores: s(3, 5, 3, 4),
+        speed: 1,
+        note: "Raciocínio para análises e argumentos complexos; pode demorar mais.",
+      },
+      {
+        id: "c4ai-aya-expanse-32b",
+        label: "Aya Expanse 32B · multilíngue",
+        scores: s(4, 3, 4, 4),
+        speed: 2,
+        note: "Multilíngue, incluindo português; útil para adaptação de tom e tradução.",
+      },
+      {
+        id: "command-a-03-2025",
+        label: "Command A · rascunhos rápidos",
+        scores: s(4, 4, 4, 4),
+        speed: 3,
+        note: "Opção geral para rascunhos rápidos e revisão em português.",
       },
       {
         id: "command-r7b-12-2024",

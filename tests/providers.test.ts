@@ -42,3 +42,54 @@ test("baseUrlFor troca {VAR} pela env e respeita a URL definida por env", async 
   assert.equal(baseUrlFor(anyapi, {}), "https://api.anyapi.ai/v1");
   assert.equal(baseUrlFor(anyapi, { ANYAPI_BASE_URL: "https://outro.ai/v1/" }), "https://outro.ai/v1");
 });
+
+test("Groq oferece somente os três modelos de texto escolhidos e identifica preview", () => {
+  const groq = getProvider("groq");
+  assert(groq);
+  assert.deepEqual(
+    groq.models.map((m) => m.id),
+    ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "openai/gpt-oss-20b"],
+  );
+  assert.match(groq.models[0]!.note, /preview/i);
+});
+
+test("Cohere distingue redação, análise, rascunhos e multilíngue", () => {
+  const cohere = getProvider("cohere");
+  assert(cohere);
+  for (const id of [
+    "command-a-plus-05-2026",
+    "command-a-reasoning-08-2025",
+    "command-a-03-2025",
+    "c4ai-aya-expanse-32b",
+  ]) {
+    assert(
+      cohere.models.some((model) => model.id === id),
+      id,
+    );
+  }
+  assert.equal(rankModels("formal", cohere.models)[0]?.id, "command-a-plus-05-2026");
+  assert.equal(rankModels("argumento", cohere.models)[0]?.id, "command-a-reasoning-08-2025");
+});
+
+test("OpenRouter inclui quatro opções gerais da lista e preserva suas notas no override", () => {
+  const provider = getProvider("openrouter");
+  assert(provider);
+  const ids = [
+    "google/gemma-4-31b-it:free",
+    "google/gemma-4-26b-a4b-it:free",
+    "nvidia/nemotron-3.5-super-vl:free",
+    "dots-studio/dots-3-note-preview:free",
+  ];
+  for (const id of ids)
+    assert(
+      provider.models.some((model) => model.id === id),
+      id,
+    );
+  const override = modelsFor(provider, { OPENROUTER_MODELS: ` ${ids[0]}, novo-modelo ` });
+  assert.equal(
+    override[0],
+    provider.models.find((model) => model.id === ids[0]),
+  );
+  assert.equal(override[1]?.id, "novo-modelo");
+  assert.equal(rankModels("formal", override)[0]?.id, ids[0]);
+});

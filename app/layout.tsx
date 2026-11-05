@@ -14,6 +14,9 @@ const serif = Instrument_Serif({
 
 export const metadata: Metadata = {
   title: "Persona · Gerador de Respostas",
+  applicationName: "Persona",
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "Persona" },
+  icons: { apple: "/icons/icon-192.png" },
   description: "Gere respostas para perguntas e afirmações com o seu jeito de escrever.",
 };
 

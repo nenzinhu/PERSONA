@@ -32,30 +32,50 @@ Next.js 15 (App Router) · sem banco de dados · deploy no Vercel.
 - **Embaralhar** sorteia outros erros sem gastar uma nova chamada ao modelo.
 - **Personalidade**: até 6 traços positivos/negativos (empático, sarcástico, impaciente…).
 
+## Decidir e responder
+
+Nova área com cinco ferramentas:
+
+- **Objetivo e limites:** escolha responder, esclarecer, recusar, encerrar ou não responder. A última opção bloqueia a geração, sem bloquear análise.
+- **Conferir rascunho:** compara fatos, promessas e condições com trechos das fontes e limites. Não verifica fatos externos nem garante correção.
+- **Pendências confirmadas:** separa perguntas, pedidos e compromissos. O usuário revisa, marca confirmação e salva por assunto. Pode editar, concluir, reabrir, excluir e desfazer a exclusão.
+- **Comparar mensagens:** mostra trechos divergentes das duas fontes e propõe uma pergunta de esclarecimento, sem decidir autoridade.
+- **Contexto protegido:** substituições literais e revisadas de nomes/códigos por apelidos antes dos envios desta área, com restauração local. O mapa não vai à API. Não cobre outras abas, áudios ou prints e não garante anonimato.
+
+Todos os envios dessa área têm uma prévia e exigem confirmação. Fontes, rascunho e mapa ficam em sessionStorage; registros confirmados ficam em localStorage. Registros só entram em análises do mesmo assunto se a opção estiver marcada. Nenhuma mensagem é enviada a terceiros automaticamente.
+
+O **Span-01 Lite** (respan/span-01-lite:free) tem integração separada com a API Decisions do OpenRouter, em vez do endpoint de chat. Na avaliação opcional, apresenta estimativas de compromisso adicional, limite contrariado e condições preservadas. Requer OPENROUTER_API_KEY; não redige respostas.
+
+## Instalar o Persona
+
+Use **Instalar app** na navegação. Chrome/Edge oferecem o prompt nativo quando disponível; no Safari do iPhone/iPad, use Compartilhar → Adicionar à Tela de Início. Requer HTTPS ou localhost.
+
+A PWA tem manifest, ícones próprios e uma página para falta de conexão. IA exige internet. O service worker guarda somente a página offline e ícones públicos, nunca chamadas de API, mensagens ou páginas do app.
+
 ## Provedores (todos com opção grátis)
 
-| Provedor         | Variável                                               | Melhor para                                                                                                                          |
-| ---------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| **Groq**         | `GROQ_API_KEY`                                         | ⭐ **Padrão recomendado.** Zap curto: Qwen 3.6 27B, resposta em <1s. Também GPT-OSS 120B/20B, Compound, Compound Mini.               |
-| **Nous Portal**  | `NOUS_API_KEY`                                         | ⭐ **DeepSeek V4 Flash**: o mais completo (opinião e imitar estilo). Também LongCat 2.0, Qwen 3.7 Flash, Mistral Nemo, Llama 3.1 8B… |
-| **NVIDIA NIM**   | `NVIDIA_API_KEY`                                       | Nemotron 3 Super 120B: rebater afirmações e textos formais.                                                                          |
-| **Mistral**      | `MISTRAL_API_KEY`                                      | Ministral 14B/8B/3B: PT-BR natural e rápido.                                                                                         |
-| **AnyAPI**       | `ANYAPI_API_KEY`                                       | Dots 3 Note e Nemotron 3 Nano Omni (free).                                                                                           |
-| **OrcaRouter**   | `ORCAROUTER_API_KEY`                                   | DeepSeek V4 Flash, GLM 5.3 Flash e Hunyuan 3 (free).                                                                                 |
-| **OpenRouter**   | `OPENROUTER_API_KEY`                                   | Nemotron 3 Super (free), `openrouter/free` como reserva automática, Nex, Dots, LFM…                                                  |
-| **Together AI**  | `TOGETHER_API_KEY`                                     | Llama 3.3 70B Turbo Free; DeepSeek R1 Distill 70B Free (lento).                                                                      |
-| **Cloudflare**   | `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`       | Workers AI (10 mil neurons/dia): Llama 3.3 70B Fast, Mistral Small 3.1, Llama 4 Scout, Gemma 3.                                      |
-| **Cohere**       | `COHERE_API_KEY`                                       | Command A (ótimo para rebater e formal) e Command R7B. Chave de teste grátis.                                                        |
-| **Hugging Face** | `HUGGINGFACE_API_KEY`                                  | Créditos mensais: Qwen 3 235B, DeepSeek V3, Llama 3.3 70B, Gemma 3 27B.                                                              |
-| **ModelScope**   | `MODELSCOPE_API_KEY`                                   | Chamadas grátis por dia: Qwen 3 235B, DeepSeek V3.1, Kimi K2, Qwen 3 32B.                                                            |
-| **AIHubMix**     | `AIHUBMIX_API_KEY`                                     | Modelos -free (Gemini 2.0 Flash, GPT-4.1). Ids mudam: ajuste com `AIHUBMIX_MODELS`.                                                  |
-| **Meu modelo**   | `CUSTOM_API_KEY` + `CUSTOM_BASE_URL` + `CUSTOM_MODELS` | Seu fine-tune (Ollama/HF/Together). Vira o recomendado para persona.                                                                 |
+| Provedor         | Variável                                               | Melhor para                                                                                                                                     |
+| ---------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Groq**         | `GROQ_API_KEY`                                         | ⭐ **Padrão recomendado.** Zap curto: Qwen 3.8 27B, em prévia. Também GPT-OSS 120B para textos elaborados e GPT-OSS 20B para rascunhos rápidos. |
+| **Nous Portal**  | `NOUS_API_KEY`                                         | ⭐ **DeepSeek V4 Flash**: o mais completo (opinião e imitar estilo). Também LongCat 2.0, Qwen 3.7 Flash, Mistral Nemo, Llama 3.1 8B…            |
+| **NVIDIA NIM**   | `NVIDIA_API_KEY`                                       | Nemotron 3 Super 120B: rebater afirmações e textos formais.                                                                                     |
+| **Mistral**      | `MISTRAL_API_KEY`                                      | Ministral 14B/8B/3B: PT-BR natural e rápido.                                                                                                    |
+| **AnyAPI**       | `ANYAPI_API_KEY`                                       | Dots 3 Note e Nemotron 3 Nano Omni (free).                                                                                                      |
+| **OrcaRouter**   | `ORCAROUTER_API_KEY`                                   | DeepSeek V4 Flash, GLM 5.3 Flash e Hunyuan 3 (free).                                                                                            |
+| **OpenRouter**   | `OPENROUTER_API_KEY`                                   | Nemotron 3 Super (free), `openrouter/free` como reserva automática, Nex, Dots, LFM…                                                             |
+| **Together AI**  | `TOGETHER_API_KEY`                                     | Llama 3.3 70B Turbo Free; DeepSeek R1 Distill 70B Free (lento).                                                                                 |
+| **Cloudflare**   | `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`       | Workers AI (10 mil neurons/dia): Llama 3.3 70B Fast, Mistral Small 3.1, Llama 4 Scout, Gemma 3.                                                 |
+| **Cohere**       | `COHERE_API_KEY`                                       | Command A (ótimo para rebater e formal) e Command R7B. Chave de teste grátis.                                                                   |
+| **Hugging Face** | `HUGGINGFACE_API_KEY`                                  | Créditos mensais: Qwen 3 235B, DeepSeek V3, Llama 3.3 70B, Gemma 3 27B.                                                                         |
+| **ModelScope**   | `MODELSCOPE_API_KEY`                                   | Chamadas grátis por dia: Qwen 3 235B, DeepSeek V3.1, Kimi K2, Qwen 3 32B.                                                                       |
+| **AIHubMix**     | `AIHUBMIX_API_KEY`                                     | Modelos -free (Gemini 2.0 Flash, GPT-4.1). Ids mudam: ajuste com `AIHUBMIX_MODELS`.                                                             |
+| **Meu modelo**   | `CUSTOM_API_KEY` + `CUSTOM_BASE_URL` + `CUSTOM_MODELS` | Seu fine-tune (Ollama/HF/Together). Vira o recomendado para persona.                                                                            |
 
 Modelos de código (Codestral, Laguna, North Mini Code), de domínio (Ling Saúde/Finanças) e o ALLaM (árabe) ficam na lista, mas com nota baixa: não servem bem para conversa em PT-BR.
 
 **Resumo da recomendação**
 
-- Resposta curta de WhatsApp → **Groq · Qwen 3.6 27B** (alternativa: Mistral · Ministral 14B)
+- Resposta curta de WhatsApp → **Groq · Qwen 3.8 27B** (alternativa: Mistral · Ministral 14B)
 - Rebater afirmação / opinião → **DeepSeek V4 Flash** (Nous ou OrcaRouter free) ou **GLM 5.3 Flash**
 - Soar exatamente como você → **DeepSeek V4 Flash** ou **Mistral Nemo** (ou o seu fine-tune)
 - Formal / trabalho → **Groq · GPT-OSS 120B** ou **Nemotron 3 Super**, com abreviação e erro em 0%
@@ -149,3 +169,15 @@ O estado do navegador usa uma versão de schema e migrate automaticamente config
 - O servidor repassa o pedido ao provedor escolhido, então exemplos e contexto deixam o navegador durante a geração. Evite dados sensíveis.
 - As chaves de API e URLs privadas dos provedores não são enviadas ao frontend.
 - Evite importar conversas com dados sensíveis de terceiros e use a limpeza/anonimização antes de fazer fine-tuning.
+
+### Atualização dos catálogos (novembro de 2026)
+
+- Cohere: Command A+, Command A Reasoning, Command A e Aya Expanse 32B; o R7B existente permanece.
+- Groq: GPT-OSS 120B, Qwen 3.8 27B (prévia) e GPT-OSS 20B. Qwen 3.6 e Compound foram retirados do catálogo padrão.
+- OpenRouter: Gemma 4 31B, Gemma 4 26B A4B, Nemotron 3.5 Super VL e Dots 3 Note Preview foram adicionados/atualizados; Span-01 Lite aparece separado para decisões. A disponibilidade de modelos gratuitos depende do provedor.
+
+Referências: [Cohere](https://docs.cohere.com/docs/models), [Aya](https://docs.cohere.com/docs/aya-expanse), [Groq](https://console.groq.com/docs/models), [OpenRouter](https://openrouter.ai/api/v1/models), [Span-01 Lite](https://openrouter.ai/respan/span-01-lite:free).
+
+### Regressões de interface
+
+Com o app rodando, `scripts/check-decision-ui.cjs` verifica que trocar o rascunho ou os compromissos invalida análises anteriores. É uma verificação opcional com Playwright instalado no ambiente de desenvolvimento; use `PERSONA_TEST_URL` para o endereço do app e `CHROME_PATH` apenas se usar um Chrome já instalado. Respostas externas são simuladas; o componente real é exercitado. A suíte Node principal continua sem essa dependência.

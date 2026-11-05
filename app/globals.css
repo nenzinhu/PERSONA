@@ -1377,7 +1377,7 @@ input {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  color: var(--accent);
+  color: var(--marker-ink);
   background: var(--marker);
   font-weight: 600;
 }
@@ -1731,7 +1731,7 @@ details.more summary em {
 }
 .coach-tag {
   background: var(--marker);
-  color: var(--ink);
+  color: var(--marker-ink);
 }
 .generation-status {
   padding: 24px;
@@ -1939,5 +1939,352 @@ details.more summary em {
   *::after {
     animation: none !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* Decisions inherit the communication desk, with evidence kept beside the draft. */
+.decision-workspace {
+  min-width: 0;
+}
+.decision-intro {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  color: var(--accent);
+  margin: 0 0 26px;
+  max-width: 78ch;
+}
+.decision-intro p {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.75;
+}
+.decision-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+.decision-columns > * {
+  min-width: 0;
+}
+.decision-results {
+  padding-top: 26px;
+  min-width: 0;
+}
+.decision-results > .panel-heading {
+  margin-bottom: 24px;
+}
+.decision-intent {
+  border: 0;
+  padding: 0;
+  margin: 0 0 22px;
+  min-width: 0;
+}
+.decision-intent legend {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-2);
+  margin-bottom: 10px;
+}
+.check-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  color: var(--ink-2);
+  font-size: 12px;
+  line-height: 1.65;
+  margin: 12px 0;
+}
+.check-label input {
+  flex: 0 0 auto;
+  margin: 3px 0 0;
+}
+.decision-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 24px 0 8px;
+}
+.decision-note {
+  background: var(--accent-soft);
+  color: var(--ink-2);
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.decision-compose details:last-child {
+  padding-bottom: 0;
+}
+.decision-privacy summary .icon {
+  width: 15px;
+  height: 15px;
+}
+.alias-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  padding: 12px 0;
+}
+.alias-row .field {
+  margin-bottom: 0;
+}
+.alias-row > button {
+  margin-bottom: 1px;
+}
+.send-preview {
+  margin-top: 24px;
+  padding: 22px;
+  background: var(--accent-soft);
+  border-radius: 12px;
+}
+.send-preview > h3 {
+  margin-bottom: 14px;
+}
+.send-preview dl {
+  margin: 20px 0;
+  display: grid;
+  gap: 16px;
+  max-height: 440px;
+  overflow-y: auto;
+  scrollbar-color: var(--muted) transparent;
+  padding-right: 8px;
+}
+.send-preview dt {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+.send-preview dd {
+  margin: 0;
+  font-size: 13px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.decision-output {
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
+  margin-top: 26px;
+}
+.decision-output > h3 {
+  font-size: 16px;
+  margin-bottom: 14px;
+}
+.decision-output p {
+  font-size: 13px;
+  line-height: 1.8;
+}
+.evidence-item {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--edge);
+}
+.evidence-item > strong {
+  font-size: 12px;
+  color: var(--accent);
+}
+.decision-workspace blockquote {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  margin: 10px 0;
+  padding: 12px;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.decision-workspace blockquote span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+.source-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+.pending-editor {
+  border-bottom: 1px solid var(--line);
+  padding: 24px 0;
+}
+.pending-editor .field {
+  margin-bottom: 14px;
+}
+.decision-ledger {
+  margin: 36px 0 24px;
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+}
+.ledger-item {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--edge);
+}
+.ledger-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.ledger-top strong {
+  overflow-wrap: anywhere;
+}
+.ledger-status {
+  font-size: 11px;
+  white-space: nowrap;
+  color: var(--warn);
+  background: var(--warn-soft);
+  padding: 4px 8px;
+  border-radius: 5px;
+}
+.ledger-status.done {
+  color: var(--ok);
+  background: var(--them);
+}
+.span-scores {
+  display: grid;
+  gap: 12px;
+}
+.span-scores > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--edge);
+  font-size: 13px;
+}
+.span-scores dd {
+  margin: 0;
+  font-weight: 600;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 1180px) {
+  .decision-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .decision-results {
+    padding-top: 0;
+  }
+}
+@media (max-width: 720px) {
+  .decision-intro {
+    margin-bottom: 20px;
+  }
+  .decision-intro p {
+    font-size: 12px;
+  }
+  .alias-row {
+    flex-wrap: wrap;
+  }
+  .alias-row .field {
+    flex-basis: 120px;
+  }
+  .alias-row > button {
+    min-height: 36px;
+  }
+  .decision-actions {
+    flex-direction: column;
+  }
+  .source-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .send-preview {
+    padding: 18px 14px;
+  }
+  .decision-results > .row > .act {
+    flex: 1 1 auto;
+  }
+  .ledger-top {
+    flex-wrap: wrap;
+  }
+}
+.install-app {
+  position: relative;
+  margin: 0 10px 24px;
+}
+.install-app-button,
+.install-app-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 8px 10px;
+  min-height: 36px;
+  background: var(--card);
+  color: var(--accent);
+  font: 500 12px var(--sans);
+  cursor: pointer;
+}
+.install-app-button:hover,
+.install-app-close:hover {
+  background: var(--accent-soft);
+}
+.install-app-button:disabled {
+  cursor: progress;
+  color: var(--muted);
+}
+.install-app-panel {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+  background: var(--card);
+  color: var(--ink-2);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.install-app-panel p {
+  margin: 10px 0;
+}
+.install-app-panel strong {
+  font-size: 13px;
+  color: var(--ink);
+}
+.install-app-status {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-top: 8px;
+}
+.install-app-status:empty {
+  display: none;
+}
+.install-app:not(:has(button)) {
+  margin: 0;
+}
+.sidebar {
+  overflow-y: auto;
+}
+.sidebar-caption {
+  margin-bottom: 14px;
+}
+@media (max-width: 720px) {
+  .install-app {
+    position: absolute;
+    right: 16px;
+    top: 16px;
+    margin: 0;
+    z-index: 5;
+  }
+  .install-app-button {
+    min-height: 38px;
+  }
+  .install-app-panel {
+    position: absolute;
+    right: 0;
+    width: min(310px, calc(100vw - 32px));
+  }
+  .install-app-status {
+    max-width: 160px;
+  }
+  .sidebar {
+    overflow: visible;
   }
 }

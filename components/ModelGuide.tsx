@@ -8,11 +8,12 @@ interface Props {
   settings: Settings;
   setSettings: (fn: (s: Settings) => Settings) => void;
   goTo: () => void;
+  goToDecisions: () => void;
 }
 
 const WHY: Record<TextKind, string> = {
   casual:
-    "Para zap curto o que importa é velocidade e PT-BR natural. Qwen 3.6 27B no Groq responde em menos de 1s e não soa robótico. Ministral 14B (Mistral) é a alternativa.",
+    "Para respostas curtas, compare naturalidade e velocidade. Na Groq: GPT-OSS 20B para rascunhos rápidos, GPT-OSS 120B para textos mais elaborados e Qwen 3.8 27B como opção em prévia.",
   argumento:
     "Para rebater uma afirmação ou dar opinião, precisa raciocinar. DeepSeek V4 Flash (Nous ou OrcaRouter free), GLM 5.3 Flash e Nemotron 3 Super argumentam melhor; o humanizador depois tira a cara de redação.",
   persona:
@@ -21,7 +22,7 @@ const WHY: Record<TextKind, string> = {
     "Para cliente/trabalho, modelos mais ‘certinhos’ ganham: GPT-OSS 120B, Nemotron 3 Super e DeepSeek V4 Flash. Use abreviação e erro em 0%.",
 };
 
-export default function ModelGuide({ providers, settings, setSettings, goTo }: Props) {
+export default function ModelGuide({ providers, settings, setSettings, goTo, goToDecisions }: Props) {
   const all = PROVIDERS.map((p) => ({ id: p.id, models: providers.find((x) => x.id === p.id)?.models ?? p.models }));
   const configured = new Set(providers.filter((p) => p.configured).map((p) => p.id));
   const modelsOf = (id: string) => all.find((p) => p.id === id)?.models ?? [];
@@ -36,8 +37,8 @@ export default function ModelGuide({ providers, settings, setSettings, goTo }: P
       <div className="card">
         <h2>Qual modelo usar para cada tipo de resposta</h2>
         <p className="muted small">
-          Notas de 1 a 5 para naturalidade em PT-BR informal. No modo Automático o app escolhe o melhor que tiver chave
-          e, se o grátis estourar o limite, tenta o próximo.
+          Notas editoriais de 1 a 5 para orientar o uso; não são benchmarks. No modo Automático o app escolhe o melhor
+          que tiver chave e, se o grátis estourar o limite, tenta o próximo.
         </p>
         {TEXT_KINDS.map((k) => {
           const top = recommend(k.id, all).slice(0, 4);
@@ -71,6 +72,16 @@ export default function ModelGuide({ providers, settings, setSettings, goTo }: P
 
       <div className="card">
         <h2>Provedores</h2>
+        <details className="more">
+          <summary>OpenRouter · Span-01 Lite (decisões)</summary>
+          <p className="small">
+            <code>respan/span-01-lite:free</code> avalia sinais no rascunho; não gera respostas de texto. Está
+            disponível separadamente em Decidir e responder.
+          </p>
+          <button className="act" onClick={goToDecisions}>
+            Abrir avaliação de decisões
+          </button>
+        </details>
         <p className="muted small">
           Estrelas para o tipo atual ({TEXT_KINDS.find((k) => k.id === settings.kind)?.label}). Abra &quot;Modelos&quot;
           para escolher um específico.
