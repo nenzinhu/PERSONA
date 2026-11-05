@@ -1,19 +1,21 @@
-# Gerador de Respostas
+# Persona
 
-Gera respostas para **perguntas** e **afirmações** (abas separadas) escritas do seu jeito: abreviações (vc, pq, tb), porcentagem de erro de digitação, traços de personalidade e exemplos reais seus. Botões para **WhatsApp**, **Copiar** e **Compartilhar**.
+Ajuda a responder mensagens do seu jeito e amplia a prática para fala, reflexão e preparação de encontros presenciais.
 
 Next.js 15 (App Router) · sem banco de dados · deploy no Vercel.
 
 ## Abas
 
-| Aba            | O que faz                                                                                                        |
-| -------------- | ---------------------------------------------------------------------------------------------------------------- |
-| **Pergunta**   | Cole a pergunta que te fizeram → respostas prontas.                                                              |
-| **Afirmação**  | Cole o que te disseram e escolha a posição: concordar, discordar, neutro, curioso.                               |
-| **Conversa**   | Cole a conversa (ou um print) → plano, resposta, prováveis réplicas e quando mandar. Também puxa assunto.        |
-| **Treino**     | A IA faz o papel da outra pessoa para você ensaiar uma conversa difícil; no fim, avalia como você foi.           |
-| **Meu estilo** | Seu nome, como você escreve, exemplos reais, importação de conversa do WhatsApp e export JSONL para fine-tuning. |
-| **Modelos**    | Qual modelo é o mais recomendado para cada tipo de texto e quais provedores têm chave.                           |
+| Aba                        | O que faz                                                                                                                          |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Decidir e responder**    | Define objetivo e limites, revisa rascunhos com fontes, compara mensagens e acompanha pendências confirmadas.                      |
+| **Pergunta**               | Cole a pergunta que te fizeram → respostas prontas.                                                                                |
+| **Afirmação**              | Cole o que te disseram e escolha a posição: concordar, discordar, neutro, curioso.                                                 |
+| **Conversa**               | Cole a conversa (ou um print) → plano, resposta, prováveis réplicas e quando mandar. Também puxa assunto.                          |
+| **Treino**                 | A IA faz o papel da outra pessoa para você ensaiar uma conversa difícil; no fim, avalia como você foi.                             |
+| **Comunicação na prática** | Ensaie uma fala, registre uma reflexão e monte informes de cumprimento de ordem de serviço com foto para compartilhar no WhatsApp. |
+| **Meu estilo**             | Seu nome, como você escreve, exemplos reais, importação de conversa do WhatsApp e export JSONL para fine-tuning.                   |
+| **Modelos**                | Qual modelo é o mais recomendado para cada tipo de texto e quais provedores têm chave.                                             |
 
 ### Ajudas extras
 
@@ -22,6 +24,12 @@ Next.js 15 (App Router) · sem banco de dados · deploy no Vercel.
 - **🎤 Áudio**: transcreve o áudio do WhatsApp (.opus/.ogg/.m4a, até 4 MB) com o Whisper do Groq.
 - **📷 Print** (aba Conversa): lê até 3 prints da conversa com um modelo de visão.
 - **Conversa**: modo _Puxar assunto_, atalhos de situação difícil (cobrar, recusar, terminar…) e ⏰ _quando mandar_.
+
+### Comunicação na prática
+
+- **Ensaio de fala:** grave até 60 segundos, ouça e escolha se quer transcrever. A transcrição usa o Groq quando você pede; a revisão opcional envia somente o texto, o objetivo e a autoavaliação ao provedor escolhido. A revisão trata do conteúdo escrito e não avalia voz, sotaque ou emoção. A gravação não é salva pelo Persona.
+- **Diário:** registre manualmente o que queria alcançar, como a conversa aconteceu para você e o que tentará depois. As entradas ficam no `localStorage` deste navegador e não são enviadas à IA.
+- **Ordem de serviço:** monte um informe de início, andamento ou encerramento com identificação da OS, data/hora, local, relato, observações e foto (obrigatória para compartilhar). O texto do rascunho fica na sessão do navegador; a foto fica apenas na memória. O compartilhamento abre o menu do dispositivo para você escolher WhatsApp e o grupo. Se não houver compartilhamento de arquivos, o texto é copiado e a foto baixada para anexar manualmente. Nada é enviado sem sua confirmação.
 
 ### "Parecer que fui eu"
 
@@ -123,6 +131,7 @@ Veja [finetune/README.md](finetune/README.md): exporte o JSONL na aba _Meu estil
 - Erros de provedor são normalizados para não expor detalhes internos.
 - Exemplos e contexto são enviados ao modelo dentro de delimitadores e tratados como dados, reduzindo o risco de injeção de prompt.
 - Headers de segurança, CSP, proteção contra clickjacking e política de permissões estão configurados em `next.config.ts`.
+- A política de permissões libera o microfone para o próprio app, usado somente no ensaio de fala. A gravação fica na memória do navegador; ao pedir transcrição, o áudio é enviado ao Groq.
 - `APP_PASSWORD` fica no servidor; a senha digitada no navegador é mantida apenas em `sessionStorage` e é recomendada em qualquer deploy público.
 
 ## Variáveis de ambiente
@@ -165,7 +174,7 @@ O estado do navegador usa uma versão de schema e migrate automaticamente config
 
 ## Privacidade
 
-- Perfil, exemplos, configurações e histórico ficam no `localStorage` do navegador; a senha do app fica apenas em `sessionStorage`.
+- Perfil, exemplos, configurações, histórico e diário ficam no `localStorage` do navegador; o rascunho de ordem de serviço e a senha do app ficam apenas em `sessionStorage`.
 - O servidor repassa o pedido ao provedor escolhido, então exemplos e contexto deixam o navegador durante a geração. Evite dados sensíveis.
 - As chaves de API e URLs privadas dos provedores não são enviadas ao frontend.
 - Evite importar conversas com dados sensíveis de terceiros e use a limpeza/anonimização antes de fazer fine-tuning.

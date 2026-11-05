@@ -258,6 +258,21 @@ export function parseConversaRequest(raw: unknown) {
   return conversaRequestSchema.safeParse(raw);
 }
 
+export const speechReviewRequestSchema = z
+  .object({
+    texto: z.string().trim().min(1, "Transcreva sua fala antes de pedir uma revisão.").max(4000),
+    objetivo: optionalText(300).default(""),
+    autoavaliacao: optionalText(500).default(""),
+    ...ajusteBase,
+  })
+  .strip();
+
+export type SpeechReviewRequest = z.infer<typeof speechReviewRequestSchema>;
+
+export function parseSpeechReviewRequest(raw: unknown) {
+  return speechReviewRequestSchema.safeParse(raw);
+}
+
 export function normalizeConversaRequest(data: ConversaRequest) {
   return {
     modo: data.modo,

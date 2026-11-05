@@ -9,10 +9,11 @@ import StyleTrainer from "@/components/StyleTrainer";
 import ModelGuide from "@/components/ModelGuide";
 import Conversation from "@/components/Conversation";
 import Simulator from "@/components/Simulator";
+import CommunicationStudio from "@/components/CommunicationStudio";
 import { useLocalState, useSessionState } from "@/lib/store";
 import { DEFAULT_PROFILE, DEFAULT_SETTINGS, type ProviderStatus } from "@/lib/types";
 
-type Tab = "decisoes" | "pergunta" | "afirmacao" | "conversa" | "treino" | "estilo" | "modelos";
+type Tab = "decisoes" | "pergunta" | "afirmacao" | "conversa" | "treino" | "pratica" | "estilo" | "modelos";
 type Theme = "system" | "light" | "dark";
 
 const TABS: { id: Tab; label: string; icon: string; description: string }[] = [
@@ -45,6 +46,12 @@ const TABS: { id: Tab; label: string; icon: string; description: string }[] = [
     label: "Treinar conversa",
     icon: "practice",
     description: "Ensaie uma conversa difícil com espaço para tentar.",
+  },
+  {
+    id: "pratica",
+    label: "Comunicação na prática",
+    icon: "practice",
+    description: "Ensaie falando, reflita sobre conversas e informe etapas de uma ordem de serviço.",
   },
   {
     id: "estilo",
@@ -244,6 +251,7 @@ export default function Home() {
           <Conversation settings={settings} perfil={perfil} setPerfil={setPerfil} senha={senha.v} />
         )}
         {tab.v === "treino" && <Simulator settings={settings} perfil={perfil} senha={senha.v} />}
+        {tab.v === "pratica" && <CommunicationStudio settings={settings} senha={senha.v} />}
         {tab.v === "estilo" && <StyleTrainer perfil={perfil} setPerfil={setPerfil} />}
         {tab.v === "modelos" && (
           <ModelGuide

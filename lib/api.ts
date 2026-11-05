@@ -1,5 +1,6 @@
 import type { Reading, Tone } from "./adjust.ts";
 import type { CoachReview } from "./coach.ts";
+import type { SpeechReview } from "./speech.ts";
 import { profileForRequest, type StyleProfile } from "./prompt.ts";
 import type { Settings } from "./types.ts";
 
@@ -85,6 +86,30 @@ export function requestCoach(
       texto: args.texto.slice(-4000),
       contexto: args.contexto.slice(-1000),
       respostas: args.respostas.slice(0, 4).map((resposta) => resposta.slice(0, 2000)),
+      ...modelFields(args.settings),
+    },
+    args.senha,
+    signal,
+  );
+}
+
+/** Revê apenas a transcrição de uma fala ensaiada; áudio não é enviado a esta rota. */
+export function requestSpeechReview(
+  args: {
+    texto: string;
+    objetivo: string;
+    autoavaliacao: string;
+    settings: Settings;
+    senha: string;
+  },
+  signal?: AbortSignal,
+): Promise<SpeechReview> {
+  return postJson<SpeechReview>(
+    "/api/ensaio-fala",
+    {
+      texto: args.texto.slice(0, 4000),
+      objetivo: args.objetivo.slice(0, 300),
+      autoavaliacao: args.autoavaliacao.slice(0, 500),
       ...modelFields(args.settings),
     },
     args.senha,
