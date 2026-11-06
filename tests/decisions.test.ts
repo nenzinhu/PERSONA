@@ -114,6 +114,8 @@ test("the psychological prompt applies to generated replies and preserves the JS
   const review = parsed();
   const reply = buildDecisionMessages({ ...review, acao: "resposta" });
   assert.match(reply.system, /5 lentes cognitivas/);
+  assert.match(reply.system, /Seco e decidido/);
+  assert.match(reply.system, /Tranquilo, com carinho pelo que passou/);
   assert.match(reply.system, /somente JSON válido/);
   assert.doesNotMatch(buildDecisionMessages(review).system, /5 lentes cognitivas/);
 });
