@@ -37,7 +37,7 @@ export default function CommunicationStudio({ settings, senha }: Props) {
       </div>
       {section === "fala" && <SpeechRehearsal settings={settings} senha={senha} />}
       {section === "diario" && <ConversationJournal />}
-      {section === "ordem" && <ServiceOrderReport />}
+      {section === "ordem" && <ServiceOrderReport settings={settings} senha={senha} />}
     </section>
   );
 }

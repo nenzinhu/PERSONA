@@ -273,6 +273,16 @@ export function parseSpeechReviewRequest(raw: unknown) {
   return speechReviewRequestSchema.safeParse(raw);
 }
 
+export function parseServiceOrderReviewRequest(raw: unknown) {
+  return z
+    .object({
+      texto: z.string().trim().min(1, "Escreva o relato antes de revisar.").max(1500),
+      modo: z.enum(["ortografia", "clareza"]),
+      ...ajusteBase,
+    })
+    .safeParse(raw);
+}
+
 export function normalizeConversaRequest(data: ConversaRequest) {
   return {
     modo: data.modo,

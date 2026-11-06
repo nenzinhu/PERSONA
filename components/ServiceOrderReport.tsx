@@ -1,59 +1,82 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useSessionState } from "@/lib/store";
+import { modelFields, postJson } from "@/lib/api";
+import {
+  buildServiceOrderReport,
+  isVehicleNumber,
+  SERVICE_ORDER_PHASES,
+  type ServiceOrderDraft,
+} from "@/lib/service-order";
+import type { Settings } from "@/lib/types";
 
-type Phase = "inicio" | "durante" | "encerramento";
-
-interface ReportDraft {
-  ordem: string;
-  fase: Phase;
-  dataHora: string;
-  local: string;
-  relato: string;
-  observacoes: string;
-}
-
-const INITIAL_DRAFT: ReportDraft = {
+const INITIAL_DRAFT: ServiceOrderDraft = {
   ordem: "",
   fase: "inicio",
   dataHora: "",
   local: "",
+  viatura: "",
   relato: "",
   observacoes: "",
 };
 
-const PHASES: { id: Phase; label: string; reportLabel: string }[] = [
-  { id: "inicio", label: "Início", reportLabel: "INÍCIO DA EXECUÇÃO" },
-  { id: "durante", label: "Durante", reportLabel: "ANDAMENTO DA EXECUÇÃO" },
-  { id: "encerramento", label: "Encerramento", reportLabel: "ENCERRAMENTO" },
-];
-
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 
-export default function ServiceOrderReport() {
-  const [draft, setDraft] = useSessionState<ReportDraft>("service-order-report", INITIAL_DRAFT);
+export default function ServiceOrderReport({ settings, senha }: { settings: Settings; senha: string }) {
+  const [draft, setDraft] = useSessionState("service-order-report", INITIAL_DRAFT);
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoUrl, setPhotoUrl] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const update = (key: keyof ReportDraft, value: string) =>
-    setDraft((current) => ({ ...current, [key]: value }) as ReportDraft);
-  const phase = PHASES.find((item) => item.id === draft.fase) ?? PHASES[0];
+  const [reviewing, setReviewing] = useState(false);
+  const [suggestion, setSuggestion] = useState("");
+  const reviewRequest = useRef<AbortController | null>(null);
+  const update = <K extends keyof ServiceOrderDraft>(key: K, value: ServiceOrderDraft[K]) =>
+    setDraft((current) => ({ ...current, [key]: value }));
+  const report = buildServiceOrderReport(draft);
+  const ready = Boolean(
+    draft.ordem.trim() && draft.local.trim() && isVehicleNumber(draft.viatura) && draft.relato.trim(),
+  );
 
-  const report = [
-    "INFORME DE CUMPRIMENTO DE ORDEM DE SERVIÇO",
-    draft.ordem.trim() ? `ORDEM DE SERVIÇO: ${draft.ordem.trim()}` : "",
-    `ETAPA: ${phase.reportLabel}`,
-    draft.dataHora ? `DATA/HORA: ${new Date(draft.dataHora).toLocaleString("pt-BR")}` : "",
-    draft.local.trim() ? `LOCAL: ${draft.local.trim()}` : "",
-    draft.relato.trim() ? `RELATO: ${draft.relato.trim()}` : "",
-    draft.observacoes.trim() ? `OBSERVAÇÕES: ${draft.observacoes.trim()}` : "",
-    photo ? "ANEXO: FOTO DO SERVIÇO" : "",
-  ]
-    .filter(Boolean)
-    .join("\n");
+  useEffect(() => () => reviewRequest.current?.abort(), []);
+
+  function changeReportText(text: string) {
+    reviewRequest.current?.abort();
+    reviewRequest.current = null;
+    setReviewing(false);
+    setSuggestion("");
+    setError("");
+    update("relato", text);
+  }
+
+  async function reviewReport(modo: "ortografia" | "clareza") {
+    if (!draft.relato.trim() || reviewRequest.current) return;
+    const controller = new AbortController();
+    reviewRequest.current = controller;
+    setReviewing(true);
+    setSuggestion("");
+    setError("");
+    try {
+      const { texto } = await postJson<{ texto: string }>(
+        "/api/revisar-ordem",
+        { texto: draft.relato, modo, ...modelFields(settings) },
+        senha,
+        controller.signal,
+      );
+      if (!controller.signal.aborted) setSuggestion(texto);
+    } catch (caught) {
+      if (!controller.signal.aborted) {
+        setError(caught instanceof Error ? caught.message : "Não consegui revisar o relato.");
+      }
+    } finally {
+      if (reviewRequest.current === controller) {
+        reviewRequest.current = null;
+        setReviewing(false);
+      }
+    }
+  }
 
   useEffect(() => {
     if (!photo) {
@@ -100,8 +123,8 @@ export default function ServiceOrderReport() {
   }
 
   async function shareReport() {
-    if (!draft.ordem.trim() || !draft.relato.trim()) {
-      setError("Preencha a identificação da ordem e o relato antes de compartilhar.");
+    if (!ready) {
+      setError("Preencha o nome da ordem, o local, a viatura e o relato antes de compartilhar.");
       return;
     }
     if (!photo) {
@@ -171,18 +194,18 @@ export default function ServiceOrderReport() {
           enviar.
         </p>
         <label className="field">
-          <span>Identificação da ordem de serviço</span>
+          <span>Nome da ordem de serviço</span>
           <input
             value={draft.ordem}
             maxLength={160}
             onChange={(event) => update("ordem", event.target.value)}
-            placeholder="Número ou identificação da OS"
+            placeholder="Ex.: Operação Bairro Seguro"
           />
         </label>
         <fieldset className="order-phase">
           <legend>Etapa do informe</legend>
           <div className="seg">
-            {PHASES.map((item) => (
+            {SERVICE_ORDER_PHASES.map((item) => (
               <button
                 type="button"
                 key={item.id}
@@ -210,15 +233,70 @@ export default function ServiceOrderReport() {
           </label>
         </div>
         <label className="field">
+          <span>Viatura PM-</span>
+          <input
+            type="text"
+            inputMode="numeric"
+            maxLength={4}
+            value={draft.viatura}
+            onChange={(event) => update("viatura", event.target.value.replace(/[^0-9]/g, ""))}
+            placeholder="0042"
+            aria-describedby="order-vehicle-help"
+            aria-invalid={Boolean(draft.viatura) && !isVehicleNumber(draft.viatura)}
+          />
+          <small id="order-vehicle-help" className="muted">
+            Informe quatro dígitos, incluindo zeros à esquerda.
+          </small>
+        </label>
+        <label className="field">
           <span>Relato do cumprimento</span>
           <textarea
             rows={5}
             maxLength={1500}
             value={draft.relato}
-            onChange={(event) => update("relato", event.target.value)}
+            onChange={(event) => changeReportText(event.target.value)}
+            spellCheck
             placeholder="Descreva o que foi realizado nesta etapa. O informe não presume conclusão da OS."
           />
         </label>
+        <div className="row">
+          <button
+            type="button"
+            className="act"
+            disabled={reviewing || !draft.relato.trim()}
+            onClick={() => void reviewReport("ortografia")}
+          >
+            Corrigir ortografia
+          </button>
+          <button
+            type="button"
+            className="act"
+            disabled={reviewing || !draft.relato.trim()}
+            onClick={() => void reviewReport("clareza")}
+          >
+            Melhorar redação
+          </button>
+        </div>
+        <p className="muted small">Ao pedir uma revisão, apenas o relato é enviado ao provedor de IA configurado.</p>
+        {reviewing && (
+          <p className="muted small" role="status">
+            Revisando o relato…
+          </p>
+        )}
+        {suggestion && (
+          <div className="send-preview" role="region" aria-label="Sugestão de revisão">
+            <p className="small">Confira se a sugestão preserva os fatos antes de aplicar.</p>
+            <p>{suggestion}</p>
+            <div className="row">
+              <button type="button" className="primary" onClick={() => changeReportText(suggestion)}>
+                Aplicar sugestão
+              </button>
+              <button type="button" className="act" onClick={() => setSuggestion("")}>
+                Descartar
+              </button>
+            </div>
+          </div>
+        )}
         <label className="field">
           <span>Observações (opcional)</span>
           <textarea
@@ -261,14 +339,10 @@ export default function ServiceOrderReport() {
           </div>
         )}
         <div className="actions order-actions">
-          <button
-            className="primary"
-            disabled={!draft.ordem.trim() || !draft.relato.trim() || !photo}
-            onClick={shareReport}
-          >
+          <button className="primary" disabled={!ready || !photo} onClick={shareReport}>
             Compartilhar no WhatsApp
           </button>
-          <button className="act" disabled={!draft.ordem.trim() || !draft.relato.trim()} onClick={copyReport}>
+          <button className="act" disabled={!ready} onClick={copyReport}>
             Copiar informe
           </button>
         </div>
@@ -291,7 +365,6 @@ export default function ServiceOrderReport() {
       <section className="order-sheet" aria-labelledby="order-preview-heading">
         <div className="order-sheet-kicker">PERSONA · INFORME DE SERVIÇO</div>
         <h2 id="order-preview-heading">Prévia para WhatsApp</h2>
-        <p className="order-sheet-phase">{phase.reportLabel}</p>
         <label className="field order-preview-field">
           <span>Prévia do informe para compartilhar</span>
           <textarea aria-label="Texto do informe" rows={12} value={report} readOnly />
