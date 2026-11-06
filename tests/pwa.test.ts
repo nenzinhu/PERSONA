@@ -2,6 +2,21 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import vm from "node:vm";
+import manifest from "../app/manifest.ts";
+
+test("a identidade da PWA tem ícones válidos para instalação e máscara", () => {
+  const settings = manifest();
+  assert.equal(settings.id, "/");
+  assert.equal(settings.theme_color, "#5142a5");
+  for (const icon of settings.icons ?? []) {
+    const png = readFileSync(new URL(`../public${icon.src}`, import.meta.url));
+    const [width, height] = icon.sizes!.split("x").map(Number);
+    assert.equal(png.toString("ascii", 1, 4), "PNG");
+    assert.equal(png.readUInt32BE(16), width);
+    assert.equal(png.readUInt32BE(20), height);
+  }
+  assert.ok(settings.icons?.some((icon) => icon.purpose === "maskable"));
+});
 
 interface WorkerEvent {
   request?: { url: string; method: string; mode: string };
@@ -96,12 +111,18 @@ test("install only stores public offline assets and activation preserves foreign
     },
   });
   await pending;
-  assert.deepEqual(writes, ["/offline.html", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/maskable-512.png"]);
+  assert.deepEqual(writes, [
+    "/offline.html",
+    "/icons/persona.svg",
+    "/icons/icon-192.png",
+    "/icons/icon-512.png",
+    "/icons/maskable-512.png",
+  ]);
   handlers.get("activate")!({
     waitUntil: (value: Promise<unknown>) => {
       pending = value;
     },
   });
   await pending;
-  assert.deepEqual(deleted, ["persona-offline-v0"]);
+  assert.deepEqual(deleted, ["persona-offline-v0", "persona-offline-v1"]);
 });

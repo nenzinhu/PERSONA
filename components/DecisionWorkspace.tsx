@@ -342,19 +342,22 @@ export default function DecisionWorkspace({
 
   return (
     <div className="decision-workspace">
-      <div className="decision-intro">
-        <Icon name="analyze" />
-        <p>
-          Escolha seu objetivo, confira o que foi dito e decida o que vale responder. Nada é enviado para outra pessoa
-          pelo Persona.
-        </p>
-      </div>
       <div className="decision-columns">
         <section className="composer decision-compose" aria-labelledby="decision-source-heading">
           <div className="panel-heading">
             <Icon name="message" />
             <h2 id="decision-source-heading">Contexto e intenção</h2>
           </div>
+          <label className="field">
+            <span>Mensagem recebida</span>
+            <textarea
+              rows={5}
+              maxLength={6000}
+              value={form.fonteA}
+              onChange={(e) => change("fonteA", e.target.value)}
+              placeholder="Cole o texto que você quer analisar…"
+            />
+          </label>
           <label className="field">
             <span>Assunto ou contato</span>
             <input
@@ -373,16 +376,6 @@ export default function DecisionWorkspace({
               <option value={subject} key={subject} />
             ))}
           </datalist>
-          <label className="field">
-            <span>Mensagem recebida</span>
-            <textarea
-              rows={5}
-              maxLength={6000}
-              value={form.fonteA}
-              onChange={(e) => change("fonteA", e.target.value)}
-              placeholder="Cole o texto que você quer analisar…"
-            />
-          </label>
           <fieldset className="decision-intent">
             <legend>O que você quer fazer?</legend>
             <div className="seg wrap">

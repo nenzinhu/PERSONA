@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import DecisionWorkspace from "@/components/DecisionWorkspace";
 import InstallApp from "@/components/InstallApp";
 import Icon from "@/components/Icon";
@@ -21,7 +22,7 @@ const TABS: { id: Tab; label: string; icon: string; description: string }[] = [
     id: "decisoes",
     label: "Decidir e responder",
     icon: "analyze",
-    description: "Seu objetivo primeiro. Depois, as palavras certas.",
+    description: "Cole a mensagem, escolha sua intenção e escreva a resposta do seu jeito.",
   },
   {
     id: "pergunta",
@@ -67,6 +68,13 @@ const TABS: { id: Tab; label: string; icon: string; description: string }[] = [
   },
 ];
 
+const PRIMARY: { id: Tab; label: string }[] = [
+  { id: "decisoes", label: "Decidir" },
+  { id: "conversa", label: "Conversa" },
+  { id: "pratica", label: "Na prática" },
+];
+const otherAreas = TABS.filter(({ id }) => !PRIMARY.some((item) => item.id === id));
+
 const THEMES: { id: Theme; label: string }[] = [
   { id: "system", label: "Sistema" },
   { id: "light", label: "Claro" },
@@ -84,6 +92,17 @@ export default function Home() {
   const [providersLoading, setProvidersLoading] = useState(true);
   const [providersError, setProvidersError] = useState(false);
   const [providersAttempt, setProvidersAttempt] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
+  const active = TABS.find((item) => item.id === tab.v) ?? TABS[0];
+
+  function openArea(id: Tab) {
+    setMenuOpen(false);
+    setTab({ v: id });
+    window.scrollTo(0, 0);
+    mainRef.current?.focus({ preventScroll: true });
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -121,86 +140,94 @@ export default function Home() {
       <a className="skip-link" href="#workspace">
         Ir para o conteúdo
       </a>
-      <aside className="sidebar">
-        <a
-          href="#workspace"
-          className="brand-lockup"
-          aria-label="Persona, início"
-          onClick={() => setTab({ v: "pergunta" })}
-        >
-          <span className="brand-symbol">
-            <Icon name="persona" />
-          </span>
-          <span className="brand">
-            persona<span className="brand-dot">.</span>
-          </span>
-        </a>
-        <p className="sidebar-caption">Sua voz, em cada conversa.</p>
-        <InstallApp />
-        <nav className="workspace-nav" aria-label="Áreas do Persona">
-          {TABS.map((item, index) => (
-            <button
-              key={item.id}
-              className={tab.v === item.id ? "nav-item active" : "nav-item"}
-              aria-current={tab.v === item.id ? "page" : undefined}
-              onClick={() => setTab({ v: item.id })}
+      <header className="masthead">
+        <div className="masthead-inner">
+          <a
+            href="#workspace"
+            className="brand-lockup"
+            aria-label="Persona, início"
+            onClick={(event) => {
+              event.preventDefault();
+              openArea("decisoes");
+            }}
+          >
+            <Image src="/icons/persona.svg" alt="" width={38} height={38} priority />
+            <span>persona</span>
+          </a>
+          <nav className="workspace-nav" aria-label="Áreas do Persona">
+            {PRIMARY.map(({ id, label }) => {
+              const item = TABS.find((tab) => tab.id === id)!;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  className="nav-item"
+                  aria-current={active.id === id ? "page" : undefined}
+                  onClick={() => openArea(id)}
+                >
+                  <Icon name={item.icon} />
+                  {label}
+                </button>
+              );
+            })}
+            <div
+              className="area-menu"
+              onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget)) setMenuOpen(false);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Escape" && menuOpen) {
+                  setMenuOpen(false);
+                  menuButton.current?.focus();
+                }
+              }}
             >
-              <Icon name={item.icon} />
-              <span>{item.label}</span>
-              {index === 0 && <span className="nav-indicator" />}
-            </button>
-          ))}
-        </nav>
-        <div className="sidebar-bottom">
-          <div className="style-note">
-            <Icon name="profile" />
-            <div>
-              <strong>Quanto mais seu, melhor.</strong>
-              <p>Seus exemplos ensinam o Persona a escrever como você.</p>
-              <button onClick={() => setTab({ v: "estilo" })}>
-                Ajustar meu estilo <Icon name="arrow" />
-              </button>
-            </div>
-          </div>
-          <div className="profile-summary">
-            <span className="profile-avatar">{perfil.nome?.trim().slice(0, 1).toUpperCase() || "P"}</span>
-            <div>
-              <strong>{perfil.nome || "Meu Persona"}</strong>
-              <span>{perfil.exemplos.length} exemplos de escrita</span>
-            </div>
-            <Icon name="lock" />
-          </div>
-        </div>
-      </aside>
-      <main className="shell" id="workspace" tabIndex={-1}>
-        <header className="workspace-top">
-          <span>
-            Meu espaço <span className="breadcrumb-separator">/</span>{" "}
-            <strong>{TABS.find((item) => item.id === tab.v)?.label}</strong>
-          </span>
-          <div className="theme-switcher" role="group" aria-label="Tema">
-            {THEMES.map((item) => (
               <button
-                key={item.id}
-                className={theme === item.id ? "on" : ""}
-                aria-pressed={theme === item.id}
-                onClick={() => setTheme(item.id)}
+                type="button"
+                className="nav-item"
+                ref={menuButton}
+                aria-expanded={menuOpen}
+                aria-controls="additional-areas"
+                data-current={otherAreas.some((item) => item.id === active.id) || undefined}
+                onClick={() => setMenuOpen((value) => !value)}
               >
-                {item.label}
+                <Icon name="settings" />
+                Mais
               </button>
-            ))}
-          </div>
-        </header>
-        <div className="page-heading">
-          <div>
-            <h1>{TABS.find((item) => item.id === tab.v)?.label}</h1>
-            <p>{TABS.find((item) => item.id === tab.v)?.description}</p>
-          </div>
-          <span className="private-note">
-            <Icon name="lock" />
-            Seu espaço pessoal
-          </span>
+              <div id="additional-areas" className="area-panel" hidden={!menuOpen}>
+                {otherAreas.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="nav-item"
+                    aria-current={active.id === item.id ? "page" : undefined}
+                    onClick={() => openArea(item.id)}
+                  >
+                    <Icon name={item.icon} />
+                    {item.label}
+                  </button>
+                ))}
+                <label className="field area-theme">
+                  <span>Aparência</span>
+                  <select value={theme} onChange={(event) => setTheme(event.target.value as Theme)}>
+                    {THEMES.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </div>
+          </nav>
+          <InstallApp />
         </div>
+      </header>
+      <main className="shell" id="workspace" ref={mainRef} tabIndex={-1}>
+        <header className="page-heading">
+          <h1>{active.label}</h1>
+          <p>{active.description}</p>
+        </header>
         {providersLoading && (
           <p className="muted small" role="status">
             Carregando provedores…
@@ -258,8 +285,8 @@ export default function Home() {
             providers={providers}
             settings={settings}
             setSettings={setSettings}
-            goTo={() => setTab({ v: "pergunta" })}
-            goToDecisions={() => setTab({ v: "decisoes" })}
+            goTo={() => openArea("pergunta")}
+            goToDecisions={() => openArea("decisoes")}
           />
         )}
 

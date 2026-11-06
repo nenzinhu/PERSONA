@@ -1,6 +1,12 @@
 /* global self, caches, URL, fetch */
-const OFFLINE_CACHE = "persona-offline-v1";
-const PUBLIC_ASSETS = ["/offline.html", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/maskable-512.png"];
+const OFFLINE_CACHE = "persona-offline-v2";
+const PUBLIC_ASSETS = [
+  "/offline.html",
+  "/icons/persona.svg",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/icons/maskable-512.png",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

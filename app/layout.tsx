@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   title: "Persona · Gerador de Respostas",
   applicationName: "Persona",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Persona" },
-  icons: { apple: "/icons/icon-192.png" },
+  icons: { icon: { url: "/icons/persona.svg", type: "image/svg+xml" }, apple: "/icons/icon-192.png" },
   description: "Gere respostas para perguntas e afirmações com o seu jeito de escrever.",
 };
 
@@ -24,8 +24,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f5f7fa" },
-    { media: "(prefers-color-scheme: dark)", color: "#141c28" },
+    { media: "(prefers-color-scheme: light)", color: "#f7f6f3" },
+    { media: "(prefers-color-scheme: dark)", color: "#181622" },
   ],
 };
 
