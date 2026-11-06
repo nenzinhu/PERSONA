@@ -8,11 +8,17 @@ import {
   buildServiceOrderReport,
   isVehicleNumber,
   SERVICE_ORDER_PHASES,
+  serviceOrderNumbers,
+  switchServiceOrderPhase,
+  type LinkedServiceOrder,
   type ServiceOrderDraft,
 } from "@/lib/service-order";
 import type { Settings } from "@/lib/types";
+import { preservesLockedPhrases } from "@/lib/draft-guard";
+import { CommitmentNotice, DraftLocks } from "./DraftGuards";
+import SpeechRehearsal from "./SpeechRehearsal";
 
-const INITIAL_DRAFT: ServiceOrderDraft = {
+const INITIAL_DRAFT: LinkedServiceOrder = {
   ordem: "",
   fase: "inicio",
   dataHora: "",
@@ -33,6 +39,17 @@ export default function ServiceOrderReport({ settings, senha }: { settings: Sett
   const [reviewing, setReviewing] = useState(false);
   const [suggestion, setSuggestion] = useState("");
   const reviewRequest = useRef<AbortController | null>(null);
+  const reportRef = useRef<HTMLTextAreaElement>(null);
+  const [lockedByPhase, setLockedByPhase] = useSessionState<Partial<Record<ServiceOrderDraft["fase"], string[]>>>(
+    "service-order-locked-phrases",
+    {},
+  );
+  const locked = lockedByPhase[draft.fase] ?? [];
+  const [transcript, setTranscript] = useState("");
+  const [checkedNumbers, setCheckedNumbers] = useState<number[]>([]);
+  const [recordingVersion, setRecordingVersion] = useState(0);
+  const numbers = serviceOrderNumbers(transcript);
+  const withDictation = [draft.relato, transcript.trim()].filter(Boolean).join("\n");
   const update = <K extends keyof ServiceOrderDraft>(key: K, value: ServiceOrderDraft[K]) =>
     setDraft((current) => ({ ...current, [key]: value }));
   const report = buildServiceOrderReport(draft);
@@ -42,17 +59,51 @@ export default function ServiceOrderReport({ settings, senha }: { settings: Sett
 
   useEffect(() => () => reviewRequest.current?.abort(), []);
 
-  function changeReportText(text: string) {
+  function clearReview() {
     reviewRequest.current?.abort();
     reviewRequest.current = null;
     setReviewing(false);
     setSuggestion("");
     setError("");
+  }
+
+  function changeReportText(text: string) {
+    clearReview();
     update("relato", text);
+  }
+
+  function changeTranscript(text: string) {
+    setTranscript(text);
+    setCheckedNumbers([]);
+  }
+
+  function clearPhaseTools() {
+    clearReview();
+    setNotice("");
+    setPhoto(null);
+    changeTranscript("");
+    setRecordingVersion((version) => version + 1);
+  }
+
+  function selectPhase(fase: ServiceOrderDraft["fase"]) {
+    if (fase === draft.fase) return;
+    clearPhaseTools();
+    setDraft((current) => switchServiceOrderPhase(current, fase));
+  }
+
+  function startNewOrder() {
+    if (!window.confirm("Apagar os rascunhos das três etapas e começar outra ordem nesta sessão?")) return;
+    clearPhaseTools();
+    setLockedByPhase({});
+    setDraft(INITIAL_DRAFT);
   }
 
   async function reviewReport(modo: "ortografia" | "clareza") {
     if (!draft.relato.trim() || reviewRequest.current) return;
+    if (!preservesLockedPhrases(draft.relato, locked)) {
+      setError("Reponha ou destrave os trechos alterados antes de revisar.");
+      return;
+    }
     const controller = new AbortController();
     reviewRequest.current = controller;
     setReviewing(true);
@@ -61,11 +112,15 @@ export default function ServiceOrderReport({ settings, senha }: { settings: Sett
     try {
       const { texto } = await postJson<{ texto: string }>(
         "/api/revisar-ordem",
-        { texto: draft.relato, modo, ...modelFields(settings) },
+        { texto: draft.relato, modo, trechosProtegidos: locked, ...modelFields(settings) },
         senha,
         controller.signal,
       );
-      if (!controller.signal.aborted) setSuggestion(texto);
+      if (!controller.signal.aborted) {
+        if (!preservesLockedPhrases(texto, locked))
+          throw new Error("A revisão alterou um trecho protegido. Seu relato foi mantido.");
+        setSuggestion(texto);
+      }
     } catch (caught) {
       if (!controller.signal.aborted) {
         setError(caught instanceof Error ? caught.message : "Não consegui revisar o relato.");
@@ -202,6 +257,11 @@ export default function ServiceOrderReport({ settings, senha }: { settings: Sett
             placeholder="Ex.: Operação Bairro Seguro"
           />
         </label>
+        <div className="row">
+          <button type="button" className="act" onClick={startNewOrder}>
+            Começar outra ordem
+          </button>
+        </div>
         <fieldset className="order-phase">
           <legend>Etapa do informe</legend>
           <div className="seg">
@@ -211,13 +271,18 @@ export default function ServiceOrderReport({ settings, senha }: { settings: Sett
                 key={item.id}
                 className={draft.fase === item.id ? "on" : ""}
                 aria-pressed={draft.fase === item.id}
-                onClick={() => update("fase", item.id)}
+                onClick={() => selectPhase(item.id)}
               >
                 {item.label}
+                {item.id !== draft.fase && draft.etapas?.[item.id]?.relato.trim() ? " · com relato" : ""}
               </button>
             ))}
           </div>
         </fieldset>
+        <p className="muted small">
+          Nome, local e viatura valem para toda a ordem. Cada etapa tem data, relato e observações próprios. Anexe a
+          foto da etapa ao compartilhar.
+        </p>
         <div className="row">
           <label className="field">
             <span>Data e hora</span>
@@ -251,6 +316,7 @@ export default function ServiceOrderReport({ settings, senha }: { settings: Sett
         <label className="field">
           <span>Relato do cumprimento</span>
           <textarea
+            ref={reportRef}
             rows={5}
             maxLength={1500}
             value={draft.relato}
@@ -259,6 +325,74 @@ export default function ServiceOrderReport({ settings, senha }: { settings: Sett
             placeholder="Descreva o que foi realizado nesta etapa. O informe não presume conclusão da OS."
           />
         </label>
+        <DraftLocks
+          key={draft.fase}
+          value={draft.relato}
+          editor={reportRef}
+          phrases={locked}
+          onChange={(phrases) => {
+            clearReview();
+            setLockedByPhase((current) => ({ ...current, [draft.fase]: phrases }));
+          }}
+        />
+        <CommitmentNotice text={draft.relato} />
+        <details className="more">
+          <summary>Ditar relato e conferir números</summary>
+          <SpeechRehearsal key={recordingVersion} settings={settings} senha={senha} onDictation={changeTranscript} />
+          {transcript && (
+            <div className="send-preview">
+              <label className="field">
+                <span>Transcrição para conferir</span>
+                <textarea
+                  rows={4}
+                  maxLength={1500}
+                  value={transcript}
+                  onChange={(event) => changeTranscript(event.target.value)}
+                />
+              </label>
+              {numbers.length > 0 ? (
+                <fieldset className="field">
+                  <legend>Confirme cada número com o áudio</legend>
+                  {numbers.map(({ text, start }) => (
+                    <label key={start} className="check-label">
+                      <input
+                        type="checkbox"
+                        checked={checkedNumbers.includes(start)}
+                        onChange={(event) => {
+                          const checked = event.target.checked;
+                          setCheckedNumbers((current) =>
+                            checked ? [...current, start] : current.filter((item) => item !== start),
+                          );
+                        }}
+                      />
+                      {text} · {transcript.slice(Math.max(0, start - 24), start + text.length + 14)}
+                    </label>
+                  ))}
+                </fieldset>
+              ) : (
+                <p className="small">
+                  Nenhum número identificado. Confira se a transcrição incluiu todos os dados ditados.
+                </p>
+              )}
+              {withDictation.length > 1500 && (
+                <p className="small" role="status">
+                  Encurte a transcrição ou o relato para que caibam em 1.500 caracteres.
+                </p>
+              )}
+              <button
+                type="button"
+                className="act"
+                disabled={!transcript.trim() || withDictation.length > 1500 || numbers.length !== checkedNumbers.length}
+                onClick={() => {
+                  changeReportText(withDictation);
+                  changeTranscript("");
+                }}
+              >
+                Acrescentar ao relato
+              </button>
+            </div>
+          )}
+        </details>
         <div className="row">
           <button
             type="button"
@@ -287,6 +421,7 @@ export default function ServiceOrderReport({ settings, senha }: { settings: Sett
           <div className="send-preview" role="region" aria-label="Sugestão de revisão">
             <p className="small">Confira se a sugestão preserva os fatos antes de aplicar.</p>
             <p>{suggestion}</p>
+            <CommitmentNotice text={suggestion} before={draft.relato} />
             <div className="row">
               <button type="button" className="primary" onClick={() => changeReportText(suggestion)}>
                 Aplicar sugestão

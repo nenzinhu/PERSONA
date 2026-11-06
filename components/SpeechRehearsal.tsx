@@ -9,11 +9,12 @@ import type { SpeechReview } from "@/lib/speech";
 interface Props {
   settings: Settings;
   senha: string;
+  onDictation?: (text: string) => void;
 }
 
 const MAX_RECORDING_MS = 60_000;
 
-export default function SpeechRehearsal({ settings, senha }: Props) {
+export default function SpeechRehearsal({ settings, senha, onDictation }: Props) {
   const [recording, setRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [audio, setAudio] = useState<Blob | null>(null);
@@ -62,6 +63,7 @@ export default function SpeechRehearsal({ settings, senha }: Props) {
     setAudio(null);
     setReview(null);
     setTranscript("");
+    onDictation?.("");
     if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
       setError(
         "Este navegador não oferece gravação de áudio. Tente atualizar o navegador ou digite sua fala para revisar.",
@@ -147,7 +149,10 @@ export default function SpeechRehearsal({ settings, senha }: Props) {
       if (!response.ok) throw new Error(data.error ?? "Não consegui transcrever sua fala.");
       const text = String(data.texto ?? "").trim();
       if (!text) throw new Error("Não encontrei fala nessa gravação. Tente outra vez.");
-      setTranscript(text);
+      if (mountedRef.current) {
+        setTranscript(text);
+        onDictation?.(text);
+      }
       setNotice("Transcrição pronta. O áudio ainda está somente nesta sessão; você pode apagá-lo a qualquer momento.");
     } catch (caught) {
       setError(errorText(caught));
@@ -180,63 +185,68 @@ export default function SpeechRehearsal({ settings, senha }: Props) {
 
   const seconds = Math.floor(elapsed / 1000);
 
+  const recorder = (
+    <section className={onDictation ? undefined : "composer"} aria-labelledby="speech-heading">
+      <div className="panel-heading">
+        <span aria-hidden="true">◉</span>
+        <h2 id="speech-heading">{onDictation ? "Ditar relato" : "Ensaie falando"}</h2>
+        <span className="panel-caption">até 60 segundos</span>
+      </div>
+      <p className="studio-intro">
+        {onDictation
+          ? "Grave o relato, ouça e transcreva. Confira os números antes de incluir o texto no informe."
+          : "Prepare um pedido, explicação ou limite. Grave, ouça e decida se quer transcrever. O Persona revisa o conteúdo da transcrição, não sua voz."}
+      </p>
+      <div className="speech-actions">
+        {!recording ? (
+          <button className="primary" disabled={transcribing} onClick={startRecording}>
+            {audio ? "Gravar outra vez" : "Começar gravação"}
+          </button>
+        ) : (
+          <button className="primary" onClick={stopRecording} aria-pressed="true">
+            Parar gravação · {String(Math.floor(seconds / 60)).padStart(2, "0")}:{String(seconds % 60).padStart(2, "0")}
+          </button>
+        )}
+        {audioUrl && <audio controls src={audioUrl} aria-label="Ouvir sua gravação" />}
+      </div>
+      {audio && (
+        <div className="row speech-actions">
+          <button
+            className="act"
+            disabled={transcribing || recording || audio.size > MAX_AUDIO_BYTES}
+            onClick={transcribe}
+          >
+            {transcribing ? "Transcrevendo…" : "Transcrever minha fala"}
+          </button>
+          <button className="act" disabled={transcribing} onClick={discardAudio}>
+            Apagar áudio
+          </button>
+          <small className="muted">{(audio.size / 1024).toFixed(0)} KB · máximo 4 MB</small>
+        </div>
+      )}
+      <p className="privacy-note">
+        Ao transcrever, o áudio é enviado ao Groq.{" "}
+        {onDictation
+          ? "A gravação fica nesta tela até trocar de etapa ou sair da seção."
+          : "A revisão opcional envia a transcrição e os campos preenchidos ao provedor escolhido. A gravação fica nesta tela até sair da seção."}
+      </p>
+      {error && (
+        <p className="provider-status error" role="alert">
+          {error}
+        </p>
+      )}
+      {notice && (
+        <p className="provider-status" role="status">
+          {notice}
+        </p>
+      )}
+    </section>
+  );
+  if (onDictation) return recorder;
+
   return (
     <div className="studio-grid">
-      <section className="composer" aria-labelledby="speech-heading">
-        <div className="panel-heading">
-          <span aria-hidden="true">◉</span>
-          <h2 id="speech-heading">Ensaie falando</h2>
-          <span className="panel-caption">até 60 segundos</span>
-        </div>
-        <p className="studio-intro">
-          Prepare um pedido, explicação ou limite. Grave, ouça e decida se quer transcrever. O Persona revisa o conteúdo
-          da transcrição, não sua voz.
-        </p>
-        <div className="speech-actions">
-          {!recording ? (
-            <button className="primary" onClick={startRecording}>
-              {audio ? "Gravar outra vez" : "Começar gravação"}
-            </button>
-          ) : (
-            <button className="primary" onClick={stopRecording} aria-pressed="true">
-              Parar gravação · {String(Math.floor(seconds / 60)).padStart(2, "0")}:
-              {String(seconds % 60).padStart(2, "0")}
-            </button>
-          )}
-          {audioUrl && <audio controls src={audioUrl} aria-label="Ouvir sua gravação" />}
-        </div>
-        {audio && (
-          <div className="row speech-actions">
-            <button
-              className="act"
-              disabled={transcribing || recording || audio.size > MAX_AUDIO_BYTES}
-              onClick={transcribe}
-            >
-              {transcribing ? "Transcrevendo…" : "Transcrever minha fala"}
-            </button>
-            <button className="act" disabled={transcribing} onClick={discardAudio}>
-              Apagar áudio
-            </button>
-            <small className="muted">{(audio.size / 1024).toFixed(0)} KB · máximo 4 MB</small>
-          </div>
-        )}
-        <p className="privacy-note">
-          Ao transcrever, o áudio é enviado ao Groq. A revisão opcional envia somente a transcrição e os campos que você
-          preencher ao provedor escolhido. O Persona não guarda a gravação; ela é apagada ao sair desta seção ou fechar
-          a página.
-        </p>
-        {error && (
-          <p className="provider-status error" role="alert">
-            {error}
-          </p>
-        )}
-        {notice && (
-          <p className="provider-status" role="status">
-            {notice}
-          </p>
-        )}
-      </section>
-
+      {recorder}
       <section className="studio-side" aria-labelledby="speech-review-heading">
         <div className="panel-heading">
           <span aria-hidden="true">✎</span>

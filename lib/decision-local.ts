@@ -68,7 +68,16 @@ export function mapContentText<T>(value: T, transform: (text: string) => string)
   if (typeof value === "string") return transform(value) as T;
   if (Array.isArray(value)) return value.map((item) => mapContentText(item, transform)) as T;
   if (value && typeof value === "object") {
-    const fixed = new Set(["acao", "tipo", "provider", "providerLabel", "model", "kind", "intencao"]);
+    const fixed = new Set([
+      "acao",
+      "tipo",
+      "provider",
+      "providerLabel",
+      "model",
+      "kind",
+      "intencao",
+      "tomEncerramento",
+    ]);
     return Object.fromEntries(
       Object.entries(value).map(([key, item]) => [key, fixed.has(key) ? item : mapContentText(item, transform)]),
     ) as T;

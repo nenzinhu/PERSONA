@@ -278,6 +278,7 @@ export function parseServiceOrderReviewRequest(raw: unknown) {
     .object({
       texto: z.string().trim().min(1, "Escreva o relato antes de revisar.").max(1500),
       modo: z.enum(["ortografia", "clareza"]),
+      trechosProtegidos: z.array(z.string().min(1).max(1500)).max(12).optional(),
       ...ajusteBase,
     })
     .safeParse(raw);

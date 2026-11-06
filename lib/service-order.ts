@@ -39,3 +39,44 @@ export function buildServiceOrderReport(draft: ServiceOrderDraft) {
 
   return paragraph ? title + "\n\n" + paragraph : title;
 }
+
+type PhaseFields = Pick<ServiceOrderDraft, "dataHora" | "relato" | "observacoes">;
+export type LinkedServiceOrder = ServiceOrderDraft & {
+  etapas?: Partial<Record<ServiceOrderDraft["fase"], PhaseFields>>;
+};
+
+export function switchServiceOrderPhase(
+  draft: LinkedServiceOrder,
+  fase: ServiceOrderDraft["fase"],
+): LinkedServiceOrder {
+  if (fase === draft.fase) return draft;
+  const { dataHora, relato, observacoes } = draft;
+  return {
+    ...draft,
+    ...{ dataHora: "", relato: "", observacoes: "" },
+    ...draft.etapas?.[fase],
+    fase,
+    etapas: { ...draft.etapas, [draft.fase]: { dataHora, relato, observacoes } },
+  };
+}
+
+const numberWord =
+  "(?:zero|um|uma|dois|duas|tr[eê]s|quatro|cinco|seis|sete|oito|nove|dez|onze|doze|treze|quatorze|catorze|quinze|dezesseis|dezessete|dezoito|dezenove|vinte|trinta|quarenta|cinquenta|sessenta|setenta|oitenta|noventa|cem|cento|duzent[oa]s|trezent[oa]s|quatrocent[oa]s|quinhent[oa]s|seiscent[oa]s|setecent[oa]s|oitocent[oa]s|novecent[oa]s|mil|meia)";
+const spokenNumber = new RegExp(
+  "(?:\\b(?:OS|O\\.S\\.|ordem(?: de serviço)?|viatura|PM|km|quil[oô]metro|hor[aá]rio)\\s*(?:n[º°.]?\\s*)?[-:]?\\s*|(?<!\\p{L})às\\s+)(" +
+    numberWord +
+    "(?:\\s+(?:e\\s+)?" +
+    numberWord +
+    ")*)(?!\\p{L})",
+  "giu",
+);
+const writtenNumber = /\d+(?:(?:[:hH.,/-]\d+)+|[hH](?!\p{L}))?/gu;
+
+export function serviceOrderNumbers(text: string) {
+  const written = [...text.matchAll(writtenNumber)].map((match) => ({ text: match[0], start: match.index }));
+  const spoken = [...text.matchAll(spokenNumber)].map((match) => ({
+    text: match[1],
+    start: match.index + match[0].length - match[1].length,
+  }));
+  return [...written, ...spoken].sort((a, b) => a.start - b.start);
+}

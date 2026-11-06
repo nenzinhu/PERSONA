@@ -3,7 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { postJson, modelFields } from "@/lib/api";
 import { useLocalState, useSessionState } from "@/lib/store";
-import { parseDecisionRequest, type DecisionAction, type DecisionInput, type DecisionResult } from "@/lib/decisions";
+import {
+  CLOSING_TONES,
+  parseDecisionRequest,
+  type DecisionAction,
+  type DecisionInput,
+  type DecisionResult,
+} from "@/lib/decisions";
 import {
   protectText,
   restoreText,
@@ -18,6 +24,8 @@ import {
 import type { Settings } from "@/lib/types";
 import type { StyleProfile } from "@/lib/prompt";
 import Icon from "./Icon";
+import { CommitmentNotice, DraftLocks } from "./DraftGuards";
+import { preservesLockedPhrases } from "@/lib/draft-guard";
 import { FranklPauseModal } from "./cognitive/FranklPauseModal";
 import { DistortionAlert } from "./cognitive/DistortionAlert";
 import { analyzeDraftDistortions } from "@/lib/cognitive/cognitiveDistortions";
@@ -31,6 +39,7 @@ const INITIAL_FORM = {
   objetivo: "",
   limites: "",
   intencao: "responder" as DecisionInput["intencao"],
+  tomEncerramento: "" as "" | keyof typeof CLOSING_TONES,
   usarEstilo: false,
   usarMemorias: true,
 };
@@ -125,6 +134,7 @@ export default function DecisionWorkspace({
   const [form, setForm] = useSessionState("decision-form", INITIAL_FORM);
   const [privacy, setPrivacy] = useSessionState("decision-privacy", INITIAL_PRIVACY);
   const [saved, setSaved] = useLocalState<SavedPending[]>("decision-pending", []);
+  const [locked, setLocked] = useSessionState<string[]>("decision-locked-phrases", []);
   const [prepared, setPrepared] = useState<Prepared | null>(null);
   const [pause, setPause] = useState<string | null>(null);
   const [results, setResults] = useState<Partial<Record<DecisionAction, DecisionResult>>>({});
@@ -202,6 +212,9 @@ export default function DecisionWorkspace({
         fonteB: form.fonteB,
         rascunho: form.rascunho,
         intencao: form.intencao,
+        tomEncerramento:
+          acao === "resposta" && form.intencao === "encerrar" ? form.tomEncerramento || undefined : undefined,
+        trechosProtegidos: acao === "resposta" && locked.length ? locked : undefined,
         objetivo: form.objetivo,
         limites: form.limites,
         memorias,
@@ -263,6 +276,8 @@ export default function DecisionWorkspace({
       if (data.acao !== snapshot.input.acao) throw new Error("A análise veio em formato inesperado. Tente novamente.");
       const restored = mapContentText(data, (value) => restoreText(value, snapshot.aliases));
       if (restored.acao === "resposta") {
+        if (!preservesLockedPhrases(restored.texto, locked))
+          throw new Error("A revisão alterou um trecho protegido. Seu rascunho foi mantido.");
         setForm((current) => ({ ...current, rascunho: restored.texto }));
         setSpanResult(null);
         setResults((current) => ({ ...current, conferir: undefined, resposta: restored }));
@@ -421,6 +436,23 @@ export default function DecisionWorkspace({
               pendências.
             </p>
           )}
+          {form.intencao === "encerrar" && (
+            <label className="field">
+              <span>Tom para encerrar um vínculo</span>
+              <select
+                value={form.tomEncerramento}
+                onChange={(event) => change("tomEncerramento", event.target.value as typeof form.tomEncerramento)}
+              >
+                <option value="">Usar o tom do contexto</option>
+                {Object.entries(CLOSING_TONES).map(([id, label]) => (
+                  <option key={id} value={id}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <small className="muted">Para quando você já decidiu seguir em frente.</small>
+            </label>
+          )}
           <div className="decision-actions">
             <button
               className="primary"
@@ -558,6 +590,16 @@ export default function DecisionWorkspace({
               placeholder="Escreva sua resposta ou prepare uma com o Persona…"
             />
           </label>
+          <DraftLocks
+            value={form.rascunho}
+            editor={draftRef}
+            phrases={locked}
+            onChange={(phrases) => {
+              invalidate();
+              setLocked(phrases);
+            }}
+          />
+          <CommitmentNotice text={form.rascunho} />
           <DistortionAlert distortions={analyzeDraftDistortions(form.rascunho)} />
           <div className="row">
             <button
@@ -607,6 +649,11 @@ export default function DecisionWorkspace({
                     ["Segunda mensagem", prepared.input.fonteB],
                     ["Rascunho", prepared.input.rascunho],
                     ["Intenção", INTENTS.find((i) => i.id === prepared.input.intencao)?.label || ""],
+                    [
+                      "Tom de encerramento",
+                      prepared.input.tomEncerramento ? CLOSING_TONES[prepared.input.tomEncerramento] : "",
+                    ],
+                    ["Trechos protegidos", prepared.input.trechosProtegidos?.join("\n") ?? ""],
                     ["Objetivo", prepared.input.objetivo],
                     ["Limites", prepared.input.limites],
                     ["Estilo e exemplos", prepared.input.estilo],
