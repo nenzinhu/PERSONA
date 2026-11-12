@@ -6,6 +6,10 @@ import type { CoachNote } from "@/lib/coach";
 import { humanize, type HumanizeOptions } from "@/lib/humanize";
 import { styleScore, type Fingerprint } from "@/lib/stylometry";
 import { isValidWhatsAppPhone } from "@/lib/whatsapp";
+import { useLocalState } from "@/lib/store";
+import { applyCorrections, type Correction } from "@/lib/corrections";
+import { analyzeDraftDistortions } from "@/lib/cognitive/cognitiveDistortions";
+import { FranklPauseModal } from "./cognitive/FranklPauseModal";
 
 interface Props {
   raw: string;
@@ -58,6 +62,9 @@ export default function ResultCard({
   const [showRaw, setShowRaw] = useState(false);
   const [flash, setFlash] = useState("");
   const [canShare, setCanShare] = useState(false);
+  const [corrections] = useLocalState<Correction[]>("style-corrections", []);
+  const [applyCorrectionsOnCopy] = useLocalState("apply-corrections", true);
+  const [pause, setPause] = useState<{ text: string; reason: string } | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => setCanShare(typeof navigator !== "undefined" && "share" in navigator), []);
@@ -96,17 +103,43 @@ export default function ResultCard({
     timeoutRef.current = setTimeout(() => setFlash(""), 1600);
   }
 
-  async function copiar() {
+  function finalText() {
+    if (!applyCorrectionsOnCopy || !corrections.length) return { text, applied: 0 };
+    const result = applyCorrections(text, corrections);
+    return { text: result.text, applied: result.applied.reduce((sum, item) => sum + item.vezes, 0) };
+  }
+
+  async function writeClipboard(value: string) {
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(value);
     } catch {
       const textarea = document.createElement("textarea");
-      textarea.value = text;
+      textarea.value = value;
       document.body.appendChild(textarea);
       textarea.select();
       document.execCommand("copy");
       textarea.remove();
     }
+  }
+
+  async function copiar() {
+    const final = finalText();
+    const distortions = analyzeDraftDistortions(final.text);
+    if (distortions.length) {
+      setPause({
+        text: final.text,
+        reason: `O texto tem marcas de ${distortions.map((item) => item.name.toLowerCase()).join(", ")}.`,
+      });
+      return;
+    }
+    await writeClipboard(final.text);
+    notify(final.applied ? `Copiado com ${final.applied} troca(s)` : "Copiado");
+  }
+
+  async function copiarDepoisDaPausa() {
+    if (!pause) return;
+    await writeClipboard(pause.text);
+    setPause(null);
     notify("Copiado");
   }
 
@@ -129,6 +162,14 @@ export default function ResultCard({
 
   return (
     <article className={preferState === "chosen" ? "bubble-card chosen" : "bubble-card"}>
+      {pause && (
+        <FranklPauseModal
+          reason={pause.reason}
+          confirmLabel="Copiar mesmo assim"
+          onConfirm={() => void copiarDepoisDaPausa()}
+          onCancel={() => setPause(null)}
+        />
+      )}
       <div className="card-meta">
         {versao !== undefined && <span className="muted">v{versao}</span>}
         {recommended && <span className="coach-pick">a IA mandaria esta</span>}

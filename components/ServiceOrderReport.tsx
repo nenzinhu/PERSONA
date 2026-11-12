@@ -2,16 +2,20 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { useSessionState } from "@/lib/store";
+import { useLocalState, useSessionState } from "@/lib/store";
 import { modelFields, postJson } from "@/lib/api";
 import {
   buildServiceOrderReport,
   isVehicleNumber,
+  openServiceOrders,
   SERVICE_ORDER_PHASES,
   serviceOrderNumbers,
+  serviceOrderPhaseLabel,
   switchServiceOrderPhase,
+  upsertServiceOrderRecord,
   type LinkedServiceOrder,
   type ServiceOrderDraft,
+  type ServiceOrderRecord,
 } from "@/lib/service-order";
 import type { Settings } from "@/lib/types";
 import { preservesLockedPhrases } from "@/lib/draft-guard";
@@ -32,6 +36,7 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 
 export default function ServiceOrderReport({ settings, senha }: { settings: Settings; senha: string }) {
   const [draft, setDraft] = useSessionState("service-order-report", INITIAL_DRAFT);
+  const [history, setHistory] = useLocalState<ServiceOrderRecord[]>("service-order-history", []);
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoUrl, setPhotoUrl] = useState("");
   const [error, setError] = useState("");
@@ -175,6 +180,30 @@ export default function ServiceOrderReport({ settings, senha }: { settings: Sett
     link.download = file.name || "foto-os";
     link.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function saveToHistory() {
+    try {
+      setHistory(upsertServiceOrderRecord(history, draft, new Date().toISOString()));
+      setNotice("OS guardada neste navegador. Você pode continuar de onde parou.");
+      setError("");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Não consegui guardar a OS.");
+    }
+  }
+
+  function continueOrder(record: ServiceOrderRecord) {
+    setDraft({
+      ordem: record.ordem,
+      fase: record.fase,
+      dataHora: record.dataHora,
+      local: record.local,
+      viatura: record.viatura,
+      relato: record.relato,
+      observacoes: record.observacoes,
+    });
+    setNotice(`OS ${record.ordem} carregada na etapa ${serviceOrderPhaseLabel(record.fase)}.`);
+    setError("");
   }
 
   async function shareReport() {
@@ -480,6 +509,9 @@ export default function ServiceOrderReport({ settings, senha }: { settings: Sett
           <button className="act" disabled={!ready} onClick={copyReport}>
             Copiar informe
           </button>
+          <button className="act" disabled={!draft.ordem.trim()} onClick={saveToHistory}>
+            Guardar OS
+          </button>
         </div>
         <p className="privacy-note">
           O rascunho de texto fica nesta sessão do navegador. A foto fica apenas na memória até você sair desta seção.
@@ -507,6 +539,46 @@ export default function ServiceOrderReport({ settings, senha }: { settings: Sett
         <p className="order-sheet-foot">
           O texto reúne apenas as informações preenchidas acima. Confira se corresponde ao que ocorreu.
         </p>
+      </section>
+
+      <section className="order-history" aria-labelledby="order-history-heading">
+        <div className="panel-heading">
+          <span aria-hidden="true">◷</span>
+          <h2 id="order-history-heading">Minhas ordens de serviço</h2>
+          <span className="panel-caption">{openServiceOrders(history).length} em aberto</span>
+        </div>
+        <p className="muted small">
+          Guarde a OS para continuar a próxima etapa depois. Fica no armazenamento local deste navegador.
+        </p>
+        {history.length ? (
+          <ul className="order-history-list">
+            {history.map((record) => (
+              <li key={record.ordem}>
+                <div>
+                  <strong>OS {record.ordem}</strong>
+                  <p className="muted small">
+                    {serviceOrderPhaseLabel(record.fase)}
+                    {record.local && ` · ${record.local}`}
+                    {record.viatura && ` · PM-${record.viatura}`}
+                  </p>
+                </div>
+                <div className="row">
+                  <button className="act" onClick={() => continueOrder(record)}>
+                    Continuar
+                  </button>
+                  <button
+                    className="act ghost"
+                    onClick={() => setHistory(history.filter((item) => item.ordem !== record.ordem))}
+                  >
+                    Remover
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="muted small">Nenhuma OS guardada ainda.</p>
+        )}
       </section>
     </div>
   );

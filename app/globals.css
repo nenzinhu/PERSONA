@@ -2744,3 +2744,252 @@ details.more summary em {
   max-width: 190px;
   margin-bottom: 0;
 }
+
+/* Biblioteca de respostas e correções pessoais (Meu estilo). */
+.library-actions {
+  justify-content: flex-start;
+  align-items: flex-end;
+  margin-bottom: 20px;
+}
+.library-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+  margin-bottom: 16px;
+}
+.library-filters .field {
+  max-width: 240px;
+  margin-bottom: 0;
+}
+.library-list,
+.correction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.library-list > li,
+.correction-list > li {
+  padding: 14px 16px;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  background: var(--bg);
+}
+.library-list p {
+  margin: 0 0 10px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.library-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.library-item-actions .small {
+  margin-right: auto;
+}
+.correction-list > li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+/* Linha do tempo da conversa: só o que o texto mostra. */
+.timeline-panel {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+.timeline-panel h3 {
+  margin: 0 0 12px;
+  font: 600 13px var(--sans);
+}
+.timeline-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+.timeline-stats div {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--card);
+  border: 1px solid var(--edge);
+}
+.timeline-stats dt {
+  color: var(--muted);
+  font: 600 10px var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.timeline-stats dd {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Jornada de treino: histórico local das avaliações. */
+.training-panel {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+.training-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.training-summary span {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 1px solid var(--edge);
+  font-size: 12px;
+}
+.training-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.training-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: baseline;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: var(--card);
+  border: 1px solid var(--edge);
+  font-size: 12px;
+}
+
+/* Comparação A/B das respostas. */
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+  margin-top: 20px;
+}
+.compare-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  background: var(--card);
+}
+.compare-card.winner {
+  border-color: var(--accent);
+}
+.compare-card p {
+  margin: 0;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.compare-score {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.compare-score b {
+  font: 600 20px var(--serif, Georgia, serif);
+  color: var(--accent);
+}
+.compare-hints {
+  margin: 0;
+  padding-left: 16px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Modo foco: só o painel atual, sem o cabeçalho. */
+.focus-mode .masthead {
+  display: none;
+}
+.focus-mode .page-heading p {
+  display: none;
+}
+.focus-toggle {
+  min-height: 40px;
+}
+
+/* Histórico de ordens de serviço. */
+.order-history {
+  grid-column: 1 / -1;
+  padding: 24px;
+  background: var(--card);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
+}
+.order-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.order-history-list > li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  background: var(--bg);
+}
+.order-history-list p {
+  margin: 4px 0 0;
+}
+
+.focus-exit {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 30;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--accent);
+  font: 600 12px var(--sans);
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 12%);
+}
+
+/* Ditado pelo navegador. */
+.dictate {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 8px;
+}
+.dictate .act.tone {
+  min-height: 38px;
+}

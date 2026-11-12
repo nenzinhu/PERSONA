@@ -4,6 +4,8 @@ import { useState } from "react";
 import { parseDataset, toDpoJsonl, toJsonl, type Preference } from "@/lib/dataset";
 import { useLocalState } from "@/lib/store";
 import BackupManager from "./BackupManager";
+import CorrectionsPanel from "./CorrectionsPanel";
+import ResponseLibrary from "./ResponseLibrary";
 import { MAX_EXAMPLES, type StyleProfile } from "@/lib/prompt";
 import { listSenders, parseWhatsAppExport, toExamples, type ChatMessage } from "@/lib/whatsapp";
 
@@ -244,6 +246,8 @@ export default function StyleTrainer({ perfil, setPerfil }: Props) {
           {total > 100 && <p className="muted small">Mostrando os 100 mais recentes.</p>}
         </div>
       </section>
+      <ResponseLibrary />
+      <CorrectionsPanel />
       <BackupManager />
     </>
   );

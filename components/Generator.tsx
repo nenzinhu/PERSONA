@@ -14,6 +14,8 @@ import CoachBar, { useCoach } from "./CoachBar";
 import { AudioButton } from "./MediaButtons";
 import Fader from "./Fader";
 import MessageReading from "./MessageReading";
+import DictateButton from "./DictateButton";
+import ResponseCompare from "./ResponseCompare";
 import ResultCard from "./ResultCard";
 
 interface Props {
@@ -211,6 +213,10 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
             placeholder={
               mode === "pergunta" ? "Cole aqui a pergunta que você recebeu…" : "Cole aqui a mensagem que você recebeu…"
             }
+          />
+          <DictateButton
+            onText={(value) => setTexto((current) => (current.trim() ? `${current.trimEnd()} ${value}` : value))}
+            label="Ditar a mensagem"
           />
         </label>
         <div className="tools">
@@ -520,6 +526,7 @@ export default function Generator({ mode, settings, setSettings, perfil, setPerf
                 {result.fallbacks.length > 0 && <> · (pulou {result.fallbacks.length} por limite)</>}
               </p>
             </CoachBar>
+            <ResponseCompare variations={result.variations} opts={h} meuJeito={meuJeito} />
             {result.variations.map((variation, index) => (
               <ResultCard
                 key={`${result.texto}-${index}-${variation.length}`}

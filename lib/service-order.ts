@@ -80,3 +80,30 @@ export function serviceOrderNumbers(text: string) {
   }));
   return [...written, ...spoken].sort((a, b) => a.start - b.start);
 }
+
+export interface ServiceOrderRecord extends ServiceOrderDraft {
+  updatedAt: string;
+}
+
+export const MAX_SERVICE_ORDER_RECORDS = 50;
+
+/** Guarda ou atualiza a OS pelo número, mantendo a etapa mais recente. */
+export function upsertServiceOrderRecord(
+  list: ServiceOrderRecord[],
+  draft: ServiceOrderDraft,
+  updatedAt: string,
+): ServiceOrderRecord[] {
+  const ordem = draft.ordem.trim();
+  if (!ordem) throw new Error("Informe a ordem de serviço para guardar.");
+  const record: ServiceOrderRecord = { ...draft, ordem, updatedAt };
+  return [record, ...list.filter((item) => item.ordem.trim() !== ordem)].slice(0, MAX_SERVICE_ORDER_RECORDS);
+}
+
+/** OS que ainda não tiveram o informe de encerramento. */
+export function openServiceOrders(list: ServiceOrderRecord[]) {
+  return list.filter((item) => item.fase !== "encerramento");
+}
+
+export function serviceOrderPhaseLabel(fase: ServiceOrderDraft["fase"]) {
+  return SERVICE_ORDER_PHASES.find(({ id }) => id === fase)?.label ?? SERVICE_ORDER_PHASES[0].label;
+}
