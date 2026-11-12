@@ -12,10 +12,21 @@ import Conversation from "@/components/Conversation";
 import Simulator from "@/components/Simulator";
 import CommunicationStudio from "@/components/CommunicationStudio";
 import BeyondBubble from "@/components/BeyondBubble";
+import CommunicationLab from "@/components/CommunicationLab";
 import { useLocalState, useSessionState } from "@/lib/store";
 import { DEFAULT_PROFILE, DEFAULT_SETTINGS, type ProviderStatus } from "@/lib/types";
 
-type Tab = "decisoes" | "pergunta" | "afirmacao" | "conversa" | "treino" | "pratica" | "beyond" | "estilo" | "modelos";
+type Tab =
+  | "decisoes"
+  | "pergunta"
+  | "afirmacao"
+  | "conversa"
+  | "treino"
+  | "pratica"
+  | "beyond"
+  | "laboratorio"
+  | "estilo"
+  | "modelos";
 type Theme = "system" | "light" | "dark";
 
 const TABS: { id: Tab; label: string; icon: string; description: string }[] = [
@@ -60,6 +71,12 @@ const TABS: { id: Tab; label: string; icon: string; description: string }[] = [
     label: "Fora da bolha",
     icon: "beyond",
     description: "Dias de pouca energia, passagem de turno, rascunho sem contexto, acordos e cartão de bolso.",
+  },
+  {
+    id: "laboratorio",
+    label: "Laboratório",
+    icon: "analyze",
+    description: "Cinco experimentos para sair da primeira resposta.",
   },
   {
     id: "estilo",
@@ -343,6 +360,7 @@ export default function Home() {
         {tab.v === "treino" && <Simulator settings={settings} perfil={perfil} senha={senha.v} />}
         {tab.v === "pratica" && <CommunicationStudio settings={settings} senha={senha.v} />}
         {tab.v === "beyond" && <BeyondBubble />}
+        {tab.v === "laboratorio" && <CommunicationLab />}
         {tab.v === "estilo" && <StyleTrainer perfil={perfil} setPerfil={setPerfil} />}
         {tab.v === "modelos" && (
           <ModelGuide
@@ -355,8 +373,8 @@ export default function Home() {
         )}
 
         <footer className="foot">
-          <Icon name="lock" /> Seu perfil e exemplos ficam neste navegador. As mensagens são enviadas ao provedor de IA
-          para análise.
+          <Icon name="lock" /> Seu perfil e exemplos ficam neste navegador. Nas ferramentas com IA, as mensagens são
+          enviadas ao provedor para análise. O Laboratório funciona localmente.
         </footer>
       </main>
     </div>

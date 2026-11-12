@@ -6,17 +6,32 @@ Next.js 15 (App Router) · sem banco de dados · deploy no Vercel.
 
 ## Abas
 
-| Aba                        | O que faz                                                                                                                         |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| **Decidir e responder**    | Define objetivo e limites, revisa rascunhos com fontes, compara mensagens e acompanha pendências confirmadas.                     |
-| **Pergunta**               | Cole a pergunta que te fizeram → respostas prontas.                                                                               |
-| **Afirmação**              | Cole o que te disseram e escolha a posição: concordar, discordar, neutro, curioso.                                                |
-| **Conversa**               | Cole a conversa (ou um print) → plano, resposta, prováveis réplicas e quando mandar. Também puxa assunto.                         |
-| **Treino**                 | A IA faz o papel da outra pessoa para você ensaiar uma conversa difícil; no fim, avalia e guarda a nota na sua jornada de treino. |
-| **Comunicação na prática** | Ensaie uma fala, registre uma reflexão, monte informes de ordem de serviço com foto e o texto de P-115/P-18 por rodovia ou ponte. |
-| **Fora da bolha**          | Cinco ferramentas locais: pouca energia, passagem de bastão, rascunho sem contexto, acordos e cartão de bolso para imprimir.      |
-| **Meu estilo**             | Seu nome, como você escreve, exemplos reais, biblioteca de respostas, correções pessoais, backup e export JSONL para fine-tuning. |
-| **Modelos**                | Qual modelo é o mais recomendado para cada tipo de texto e quais provedores têm chave.                                            |
+| Aba                        | O que faz                                                                                                                                         |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Decidir e responder**    | Define objetivo e limites, revisa rascunhos com fontes, compara mensagens e acompanha pendências confirmadas.                                     |
+| **Pergunta**               | Cole a pergunta que te fizeram → respostas prontas.                                                                                               |
+| **Afirmação**              | Cole o que te disseram e escolha a posição: concordar, discordar, neutro, curioso.                                                                |
+| **Conversa**               | Cole a conversa (ou um print) → plano, resposta, prováveis réplicas e quando mandar. Também puxa assunto.                                         |
+| **Treino**                 | A IA faz o papel da outra pessoa para você ensaiar uma conversa difícil; no fim, avalia e guarda a nota na sua jornada de treino.                 |
+| **Comunicação na prática** | Ensaie uma fala, registre uma reflexão, monte informes de ordem de serviço com foto e o texto de P-115/P-18 por rodovia ou ponte.                 |
+| **Fora da bolha**          | Cinco ferramentas locais: pouca energia, passagem de bastão, rascunho sem contexto, acordos e cartão de bolso para imprimir.                      |
+| **Laboratório**            | Cinco exercícios locais: observação x interpretação, hipóteses, reescrever com orçamento de palavras, previsão com prazo e proposta de reparação. |
+| **Meu estilo**             | Seu nome, como você escreve, exemplos reais, biblioteca de respostas, correções pessoais, backup e export JSONL para fine-tuning.                 |
+| **Modelos**                | Qual modelo é o mais recomendado para cada tipo de texto e quais provedores têm chave.                                                            |
+
+### Laboratório
+
+Acesse **Laboratório** no menu para cinco exercícios sem IA:
+
+- **Câmera e legenda:** separa observação, interpretação, alternativa e pergunta de checagem.
+- **Três mundos possíveis:** confronta a primeira leitura com duas hipóteses e uma forma respeitosa de conferir.
+- **Mensagem de bolso:** ajuda a reescrever manualmente com orçamento de 15, 30 ou 60 palavras e contador de redução.
+- **Cápsula de perspectiva:** guarda uma previsão por 1, 10 ou 60 minutos e permite compará-la com o ocorrido após o prazo.
+- **Oficina de reparação:** monta um rascunho com ação reconhecida, impacto relatado e reparação proposta.
+
+Os resultados podem ser copiados. Os rascunhos ficam no `sessionStorage` da aba, inclusive ao alternar ferramentas ou recarregar. Não são enviados a provedores. A cápsula não agenda notificações e não é um arquivo permanente. Com a página já carregada, os exercícios não precisam de conexão.
+
+Verificação de navegador: com Playwright disponível e o app em `http://localhost:3100`, execute `node scripts/check-laboratory.mjs`. Use `PERSONA_TEST_URL` para outro endereço, `PERSONA_PLAYWRIGHT_PATH` para a URL de uma instalação isolada do módulo e `PERSONA_SCREENSHOT` para o caminho da captura. O teste usa Microsoft Edge headless.
 
 ### Ajudas extras
 
