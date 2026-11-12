@@ -1,13 +1,24 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const sans = Geist({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
-const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap" });
-const serif = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
+const sans = localFont({
+  src: "../public/fonts/geist.ttf",
+  weight: "100 900",
+  variable: "--font-sans",
+  display: "swap",
+});
+const mono = localFont({
+  src: "../public/fonts/geist-mono.ttf",
+  weight: "100 900",
+  variable: "--font-mono",
+  display: "swap",
+});
+const serif = localFont({
+  src: [
+    { path: "../public/fonts/instrument-serif.ttf", weight: "400", style: "normal" },
+    { path: "../public/fonts/instrument-serif-italic.ttf", weight: "400", style: "italic" },
+  ],
   variable: "--font-serif",
   display: "swap",
 });

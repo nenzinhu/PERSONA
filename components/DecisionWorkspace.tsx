@@ -342,6 +342,17 @@ export default function DecisionWorkspace({
 
   return (
     <div className="decision-workspace">
+      <ol className="decision-path" aria-label="Como preparar sua resposta">
+        <li>
+          <span>1</span> Entenda a mensagem
+        </li>
+        <li>
+          <span>2</span> Preserve seus limites
+        </li>
+        <li>
+          <span>3</span> Revise antes de copiar
+        </li>
+      </ol>
       <div className="decision-columns">
         <section className="composer decision-compose" aria-labelledby="decision-source-heading">
           <div className="panel-heading">
@@ -351,6 +362,7 @@ export default function DecisionWorkspace({
           <label className="field">
             <span>Mensagem recebida</span>
             <textarea
+              className="headline-input"
               rows={5}
               maxLength={6000}
               value={form.fonteA}
@@ -567,7 +579,7 @@ export default function DecisionWorkspace({
           </details>
         </section>
 
-        <section className="decision-results" ref={resultRef} aria-label="Rascunho e análises">
+        <section className="composer decision-results" ref={resultRef} aria-label="Rascunho e análises">
           <div className="panel-heading">
             <Icon name="reply" />
             <h2>Sua decisão, suas palavras</h2>
@@ -575,6 +587,7 @@ export default function DecisionWorkspace({
           <label className="field">
             <span>Rascunho para editar ou conferir</span>
             <textarea
+              className="headline-input"
               ref={draftRef}
               rows={6}
               maxLength={4000}

@@ -96,6 +96,7 @@ export default function Home() {
   const menuButton = useRef<HTMLButtonElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   const active = TABS.find((item) => item.id === tab.v) ?? TABS[0];
+  const connectedProviders = providers.filter((provider) => provider.configured).length;
 
   function openArea(id: Tab) {
     setMenuOpen(false);
@@ -134,6 +135,10 @@ export default function Home() {
     if (theme === "system") root.removeAttribute("data-theme");
     else root.setAttribute("data-theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    document.title = `${active.label} · Persona`;
+  }, [active.label]);
 
   return (
     <div className="app-layout">
@@ -225,8 +230,22 @@ export default function Home() {
       </header>
       <main className="shell" id="workspace" ref={mainRef} tabIndex={-1}>
         <header className="page-heading">
-          <h1>{active.label}</h1>
-          <p>{active.description}</p>
+          <div className="page-heading-copy">
+            <h1>{active.label}</h1>
+            <p>{active.description}</p>
+          </div>
+          {!providersLoading && !providersError && (
+            <button className="connection-link" onClick={() => openArea("modelos")}>
+              <Icon name="settings" />
+              <span>
+                <strong>{connectedProviders ? "IA configurada" : "Conectar IA"}</strong>
+                <span>
+                  {connectedProviders ? "Ver modelos disponíveis" : "Configure um provedor para gerar respostas"}
+                </span>
+              </span>
+              <Icon name="reply" />
+            </button>
+          )}
         </header>
         {providersLoading && (
           <p className="muted small" role="status">
