@@ -3,15 +3,17 @@
 import { useState } from "react";
 import type { Settings } from "@/lib/types";
 import ConversationJournal from "./ConversationJournal";
+import PatrolReport from "./PatrolReport";
 import ServiceOrderReport from "./ServiceOrderReport";
 import SpeechRehearsal from "./SpeechRehearsal";
 
-type Section = "fala" | "diario" | "ordem";
+type Section = "fala" | "diario" | "ordem" | "patrulha";
 
 const SECTIONS: { id: Section; label: string }[] = [
   { id: "fala", label: "Ensaio de fala" },
   { id: "diario", label: "Diário" },
   { id: "ordem", label: "Ordem de serviço" },
+  { id: "patrulha", label: "P-115 / P-18" },
 ];
 
 interface Props {
@@ -38,6 +40,7 @@ export default function CommunicationStudio({ settings, senha }: Props) {
       {section === "fala" && <SpeechRehearsal settings={settings} senha={senha} />}
       {section === "diario" && <ConversationJournal />}
       {section === "ordem" && <ServiceOrderReport settings={settings} senha={senha} />}
+      {section === "patrulha" && <PatrolReport />}
     </section>
   );
 }

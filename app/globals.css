@@ -2670,3 +2670,77 @@ details.more summary em {
     font-size: 13px;
   }
 }
+
+/* P-115 / P-18: texto padrão de patrulhamento. */
+.patrol-ops {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.patrol-hint {
+  margin: -8px 0 16px;
+}
+.patrol-preview {
+  margin: 0;
+  padding: 16px;
+  border-radius: 10px;
+  background: var(--marker);
+  color: var(--marker-ink);
+  font: 13px/1.7 var(--mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Backup do Persona: exportar e restaurar o que fica neste navegador. */
+.backup-panel {
+  margin-top: 26px;
+  padding: 24px;
+  background: var(--card);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
+}
+.backup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+/* Lembretes de pendências: o que venceu ou vence hoje. */
+.due-chip {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--warn-soft);
+  color: var(--warn);
+  font: 600 11px var(--mono);
+}
+.due-chip.vencido {
+  background: var(--neg-soft);
+  color: var(--neg);
+}
+.due-chip.hoje {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.decision-reminders .reminder-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  background: var(--bg);
+}
+.decision-reminders .reminder-item p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.due-field {
+  max-width: 190px;
+  margin-bottom: 0;
+}

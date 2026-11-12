@@ -28,6 +28,7 @@ import { CommitmentNotice, DraftLocks } from "./DraftGuards";
 import { preservesLockedPhrases } from "@/lib/draft-guard";
 import { FranklPauseModal } from "./cognitive/FranklPauseModal";
 import { DistortionAlert } from "./cognitive/DistortionAlert";
+import { dueLabel, dueReminders, dueState, setPendingDue, todayISO } from "@/lib/reminders";
 import { analyzeDraftDistortions } from "@/lib/cognitive/cognitiveDistortions";
 import { calculateEmotionalLoad } from "@/lib/cognitive/franklPause";
 
@@ -66,10 +67,11 @@ function PendingEditor({
   label = "Confirmar e salvar",
 }: {
   item: PendingSuggestion;
-  onSave: (value: PendingSuggestion) => void;
+  onSave: (value: PendingSuggestion, vencimento: string) => void;
   label?: string;
 }) {
   const [draft, setDraft] = useState(item);
+  const [due, setDue] = useState("vencimento" in item && typeof item.vencimento === "string" ? item.vencimento : "");
   const [confirmed, setConfirmed] = useState(false);
   const update = (key: keyof PendingSuggestion, value: string) => {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -108,12 +110,23 @@ function PendingEditor({
         <span>Condição para acontecer</span>
         <input maxLength={1000} value={draft.condicao} onChange={(e) => update("condicao", e.target.value)} />
       </label>
+      <label className="field">
+        <span>Vence em (opcional, para lembretes)</span>
+        <input
+          type="date"
+          value={due}
+          onChange={(e) => {
+            setDue(e.target.value);
+            setConfirmed(false);
+          }}
+        />
+      </label>
       <blockquote>{draft.fonte}</blockquote>
       <label className="check-label">
         <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
         Conferi o trecho e confirmo este registro.
       </label>
-      <button className="act" disabled={!confirmed || !draft.descricao.trim()} onClick={() => onSave(draft)}>
+      <button className="act" disabled={!confirmed || !draft.descricao.trim()} onClick={() => onSave(draft, due)}>
         {label}
       </button>
     </div>
@@ -143,6 +156,7 @@ export default function DecisionWorkspace({
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [removed, setRemoved] = useState<SavedPending | null>(null);
+  const [notify, setNotify] = useLocalState("decision-reminders", false);
   const abort = useRef<AbortController | null>(null);
   const revision = useRef(0);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -153,6 +167,24 @@ export default function DecisionWorkspace({
       item && typeof item.assunto === "string" && typeof item.descricao === "string" && typeof item.fonte === "string",
   );
   const subjectSaved = validSaved.filter((item) => item.assunto === form.assunto.trim());
+  const today = todayISO();
+  const reminders = dueReminders(validSaved, today);
+
+  async function toggleNotify() {
+    if (!notify && typeof Notification !== "undefined" && Notification.permission === "default") {
+      await Notification.requestPermission();
+    }
+    setNotify(!notify);
+  }
+
+  function changeDue(item: SavedPending, vencimento: string) {
+    try {
+      const updated = setPendingDue(item, vencimento);
+      setSaved((items) => items.map((other) => (other.id === item.id ? updated : other)));
+    } catch {
+      // o input date já restringe o formato
+    }
+  }
 
   function invalidate() {
     revision.current += 1;
@@ -175,6 +207,15 @@ export default function DecisionWorkspace({
     setPrivacy(next);
   }
   useEffect(() => () => abort.current?.abort(), []);
+  const notified = useRef(false);
+  useEffect(() => {
+    if (!notify || notified.current || !reminders.length) return;
+    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    notified.current = true;
+    new Notification("Persona — pendências", {
+      body: `${reminders.length} ${reminders.length === 1 ? "pendência venceu ou vence" : "pendências venceram ou vencem"} em breve. Abra Decidir para conferir.`,
+    });
+  }, [notify, reminders]);
   useEffect(() => {
     revision.current += 1;
     abort.current?.abort();
@@ -294,7 +335,7 @@ export default function DecisionWorkspace({
     }
   }
 
-  function savePending(item: PendingSuggestion, existing?: SavedPending) {
+  function savePending(item: PendingSuggestion, vencimento: string, existing?: SavedPending) {
     try {
       if (
         !existing &&
@@ -304,13 +345,16 @@ export default function DecisionWorkspace({
         )
       )
         throw new Error("Este registro já está salvo neste assunto.");
-      const confirmed = confirmPending(
-        item,
-        form.assunto,
-        true,
-        existing?.id ?? crypto.randomUUID(),
-        new Date().toISOString(),
-        existing,
+      const confirmed = setPendingDue(
+        confirmPending(
+          item,
+          form.assunto,
+          true,
+          existing?.id ?? crypto.randomUUID(),
+          new Date().toISOString(),
+          existing,
+        ),
+        vencimento,
       );
       setSaved((items) => [...items.filter((other) => other.id !== confirmed.id), confirmed].slice(-100));
       setNotice("Registro confirmado e salvo neste navegador.");
@@ -816,12 +860,62 @@ export default function DecisionWorkspace({
               )}
               {!pending.itens.length && <p>Nenhuma pendência explícita foi identificada.</p>}
               {pending.itens.map((item, i) => (
-                <PendingEditor key={`${i}-${item.fonte}`} item={item} onSave={(value) => savePending(value)} />
+                <PendingEditor
+                  key={`${i}-${item.fonte}`}
+                  item={item}
+                  onSave={(value, due) => savePending(value, due)}
+                />
               ))}
             </section>
           )}
         </section>
       </div>
+      {reminders.length > 0 && (
+        <section className="decision-ledger decision-reminders" aria-labelledby="reminders-heading">
+          <div className="panel-heading">
+            <Icon name="practice" />
+            <h2 id="reminders-heading">Lembretes de pendências</h2>
+            <span className="panel-caption">{reminders.length}</span>
+          </div>
+          <p className="muted small">
+            Só o que você confirmou, com a data que você escolheu. Nada é enviado a lugar nenhum.
+          </p>
+          {reminders.map((item) => (
+            <article className="reminder-item" key={`reminder-${item.id}`}>
+              <div>
+                <strong>{item.descricao}</strong>
+                <p className="muted small">
+                  {item.assunto}
+                  {item.responsavel && ` · ${item.responsavel}`}
+                </p>
+              </div>
+              <span className={`due-chip ${dueState(item.vencimento, today) ?? ""}`}>
+                {dueLabel(item.vencimento, today)}
+              </span>
+              <div className="row">
+                <button
+                  className="act"
+                  onClick={() => {
+                    setSaved((items) =>
+                      items.map((other) => (other.id === item.id ? changePendingStatus(other, "concluido") : other)),
+                    );
+                    invalidateAfterMemoryChange();
+                  }}
+                >
+                  Concluir
+                </button>
+                <button className="act ghost" onClick={() => change("assunto", item.assunto)}>
+                  Ver assunto
+                </button>
+              </div>
+            </article>
+          ))}
+          <label className="check-label">
+            <input type="checkbox" checked={notify} onChange={() => void toggleNotify()} />
+            Avisar ao abrir o Persona neste navegador.
+          </label>
+        </section>
+      )}
       <section className="decision-ledger" aria-labelledby="pending-heading">
         <div className="panel-heading">
           <Icon name="practice" />
@@ -845,6 +939,11 @@ export default function DecisionWorkspace({
               <span className={item.status === "concluido" ? "ledger-status done" : "ledger-status"}>
                 {item.status === "concluido" ? "Concluído" : "Em aberto"}
               </span>
+              {item.status === "aberto" && dueLabel(item.vencimento, today) && (
+                <span className={`due-chip ${dueState(item.vencimento, today) ?? ""}`}>
+                  {dueLabel(item.vencimento, today)}
+                </span>
+              )}
             </div>
             <p className="small">
               {item.tipo === "compromisso" ? "Compromisso" : item.tipo === "pedido" ? "Pedido" : "Pergunta"} ·{" "}
@@ -870,6 +969,14 @@ export default function DecisionWorkspace({
               >
                 {item.status === "aberto" ? "Concluir" : "Reabrir"}
               </button>
+              <label className="field due-field">
+                <span>Vence em</span>
+                <input
+                  type="date"
+                  value={item.vencimento ?? ""}
+                  onChange={(event) => changeDue(item, event.target.value)}
+                />
+              </label>
               <button
                 className="act ghost"
                 onClick={() => {
@@ -883,7 +990,11 @@ export default function DecisionWorkspace({
             </div>
             <details className="more">
               <summary>Corrigir registro</summary>
-              <PendingEditor item={item} onSave={(value) => savePending(value, item)} label="Confirmar edição" />
+              <PendingEditor
+                item={item}
+                onSave={(value, due) => savePending(value, due, item)}
+                label="Confirmar edição"
+              />
             </details>
           </article>
         ))}
