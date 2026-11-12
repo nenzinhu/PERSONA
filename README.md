@@ -18,6 +18,20 @@ Next.js 15 (App Router) · sem banco de dados · deploy no Vercel.
 | **Meu estilo**             | Seu nome, como você escreve, exemplos reais, importação de conversa do WhatsApp e export JSONL para fine-tuning.                   |
 | **Modelos**                | Qual modelo é o mais recomendado para cada tipo de texto e quais provedores têm chave.                                             |
 
+### Laboratório
+
+Acesse **Laboratório** no menu para cinco exercícios sem IA:
+
+- **Câmera e legenda:** separa observação, interpretação, alternativa e pergunta de checagem.
+- **Três mundos possíveis:** confronta a primeira leitura com duas hipóteses e uma forma respeitosa de conferir.
+- **Mensagem de bolso:** ajuda a reescrever manualmente com orçamento de 15, 30 ou 60 palavras e contador de redução.
+- **Cápsula de perspectiva:** guarda uma previsão por 1, 10 ou 60 minutos e permite compará-la com o ocorrido após o prazo.
+- **Oficina de reparação:** monta um rascunho com ação reconhecida, impacto relatado e reparação proposta.
+
+Os resultados podem ser copiados. Os rascunhos ficam no `sessionStorage` da aba, inclusive ao alternar ferramentas ou recarregar. Não são enviados a provedores. A cápsula não agenda notificações e não é um arquivo permanente. Com a página já carregada, os exercícios não precisam de conexão.
+
+Verificação de navegador: com Playwright disponível e o app em `http://localhost:3100`, execute `node scripts/check-laboratory.mjs`. Use `PERSONA_TEST_URL` para outro endereço, `PERSONA_PLAYWRIGHT_PATH` para a URL de uma instalação isolada do módulo e `PERSONA_SCREENSHOT` para o caminho da captura. O teste usa Microsoft Edge headless.
+
 ### Ajudas extras
 
 - **Botões de tom** em cada resposta: mais curto, carinhoso, seco, engraçado ou formal.
