@@ -14,6 +14,7 @@ const paths: Record<string, string> = {
   arrow: "M4 12h16m-6-6 6 6-6 6",
   lock: "M7 10V7a5 5 0 0 1 10 0v3M6 10h12a1 1 0 0 1 1 1v9H5v-9a1 1 0 0 1 1-1ZM12 14v3",
   analyze: "M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm5 12 6 6M7 10h6M10 7v6",
+  beyond: "m3 11 18-8-8 18-2-8-8-2Z",
 };
 
 export default function Icon({ name, style }: { name: string; style?: CSSProperties }) {
