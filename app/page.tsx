@@ -94,6 +94,7 @@ export default function Home() {
   const [perfil, setPerfil] = useLocalState("perfil", DEFAULT_PROFILE);
   const [senha, setSenha] = useSessionState("senha", { v: "" });
   const [theme, setTheme] = useLocalState<Theme>("theme", "system");
+  const [focus, setFocus] = useLocalState("focus-mode", false);
   const [providers, setProviders] = useState<ProviderStatus[]>([]);
   const [needsPassword, setNeedsPassword] = useState(false);
   const [providersLoading, setProvidersLoading] = useState(true);
@@ -146,6 +147,25 @@ export default function Home() {
   useEffect(() => {
     document.title = `${active.label} · Persona`;
   }, [active.label]);
+
+  // Atalhos da PWA abrem o app já na área certa (?area=...).
+  useEffect(() => {
+    const area = new URLSearchParams(window.location.search).get("area");
+    if (area && TABS.some((item) => item.id === area)) setTab({ v: area as Tab });
+  }, [setTab]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("focus-mode", focus);
+  }, [focus]);
+
+  useEffect(() => {
+    if (!focus) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setFocus(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [focus, setFocus]);
 
   return (
     <div className="app-layout">
@@ -219,6 +239,18 @@ export default function Home() {
                     {item.label}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  className="nav-item"
+                  aria-pressed={focus}
+                  onClick={() => {
+                    setFocus(!focus);
+                    setMenuOpen(false);
+                  }}
+                >
+                  <Icon name="practice" />
+                  {focus ? "Sair do modo foco" : "Modo foco"}
+                </button>
                 <label className="field area-theme">
                   <span>Aparência</span>
                   <select value={theme} onChange={(event) => setTheme(event.target.value as Theme)}>
@@ -235,6 +267,11 @@ export default function Home() {
           <InstallApp />
         </div>
       </header>
+      {focus && (
+        <button type="button" className="focus-exit" onClick={() => setFocus(false)}>
+          Sair do foco (Esc)
+        </button>
+      )}
       <main className="shell" id="workspace" ref={mainRef} tabIndex={-1}>
         <header className="page-heading">
           <div className="page-heading-copy">

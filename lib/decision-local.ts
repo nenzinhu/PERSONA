@@ -15,6 +15,8 @@ export interface SavedPending extends PendingSuggestion {
   assunto: string;
   status: "aberto" | "concluido";
   confirmadoEm: string;
+  /** Data de vencimento opcional (AAAA-MM-DD), escolhida pela pessoa. */
+  vencimento?: string;
 }
 
 const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

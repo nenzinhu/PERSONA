@@ -12,9 +12,11 @@ import { useLocalState } from "@/lib/store";
 import { MIN_EXAMPLES, fingerprint } from "@/lib/stylometry";
 import type { Settings } from "@/lib/types";
 import { MAX_CONVERSATION, listSenders, parseConversation } from "@/lib/whatsapp";
+import { conversationStats, formatGapLabel } from "@/lib/timeline";
 import { errorText, modelFields, postJson, requestTone } from "@/lib/api";
 import CoachBar, { useCoach } from "./CoachBar";
 import { AudioButton, PrintButton } from "./MediaButtons";
+import DictateButton from "./DictateButton";
 import MessageReading from "./MessageReading";
 import ResultCard from "./ResultCard";
 
@@ -64,6 +66,7 @@ export default function Conversation({ settings, perfil, setPerfil, senha }: Pro
   const mensagens = useMemo(() => parseConversation(colado), [colado]);
   const remetentes = useMemo(() => listSenders(mensagens), [mensagens]);
   const recentes = mensagens.slice(-MAX_CONVERSATION);
+  const stats = useMemo(() => conversationStats(recentes), [recentes]);
   const souEu = remetentes.includes(eu.v) ? eu.v : "";
   const ultima = recentes.at(-1);
 
@@ -227,6 +230,17 @@ export default function Conversation({ settings, perfil, setPerfil, senha }: Pro
           />
         </div>
 
+        <DictateButton
+          onText={(value) =>
+            setColado((current) =>
+              current.trim()
+                ? `${current.trimEnd()}
+${value}`
+                : value,
+            )
+          }
+          label="Ditar mensagem"
+        />
         {colado.trim() && !mensagens.length && (
           <p className="error" role="alert">
             Não reconheci mensagens. Use o formato copiado do WhatsApp ou linhas &quot;Nome: texto&quot;.
@@ -255,6 +269,43 @@ export default function Conversation({ settings, perfil, setPerfil, senha }: Pro
               {remetentes.length === 1 && " Só achei um remetente."}
             </small>
           </div>
+        )}
+        {stats.comHorario > 1 && (
+          <section className="timeline-panel" aria-labelledby="timeline-heading">
+            <h3 id="timeline-heading">Ritmo da conversa</h3>
+            <dl className="timeline-stats">
+              <div>
+                <dt>Mensagens</dt>
+                <dd>
+                  {stats.total} no total · {stats.comHorario} com horário
+                </dd>
+              </div>
+              <div>
+                <dt>Por pessoa</dt>
+                <dd>{stats.porPessoa.map((item) => `${item.nome}: ${item.total}`).join(" · ")}</dd>
+              </div>
+              <div>
+                <dt>Maior intervalo</dt>
+                <dd>
+                  {stats.maiorIntervalo
+                    ? `${formatGapLabel(stats.maiorIntervalo.minutos)} entre ${stats.maiorIntervalo.de} e ${stats.maiorIntervalo.para}`
+                    : "Sem horário suficiente"}
+                </dd>
+              </div>
+              <div>
+                <dt>Resposta média</dt>
+                <dd>
+                  {stats.respostaMedia.length
+                    ? stats.respostaMedia.map((item) => `${item.nome}: ${formatGapLabel(item.minutos)}`).join(" · ")
+                    : "Sem horário suficiente"}
+                </dd>
+              </div>
+            </dl>
+            <p className="muted small">
+              Medido só pelo horário das mensagens coladas. O Persona não interpreta humor, intenção nem quem está
+              certo.
+            </p>
+          </section>
         )}
         {modo === "responder" && souEu && ultimaDeles && (
           <MessageReading texto={ultimaDeles} contexto={antes} settings={settings} senha={senha} />
