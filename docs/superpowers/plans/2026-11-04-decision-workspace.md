@@ -34,10 +34,14 @@
 - [x] 3. Implement new workspace and review-before-send flow using those helpers; integrate navigation without replacing existing areas.
 - [x] 4. Reproduce dark badge contrast failure with rendered CSS, correct foreground pairing, verify both dark modes.
 - [x] 5. Run full suite, lint, typecheck, production build, browser flows with controlled provider responses; review mobile/desktop and obtain independent code review.
-- [ ] 6. Resolve material findings, update docs, push main and verify production deployment.
+- [x] 6. Resolve material findings, update docs, push main and verify production deployment.
 
 ## Added scope during execution
 
 - User requested Cohere four-model update, Groq three text models, OpenRouter four selected text models plus Span-01 Lite via separate Decisions integration, and PWA installation.
 - Final review found and reproduced three state regressions; fixed stale draft/memory evaluations and completed-record edit status.
 - 106 Node tests plus browser regression/end-to-end flows pass before release.
+
+## Release
+
+- Task 6 fechado em 2026-11-12: documentação atualizada, `main` publicado e deploy de produção do Vercel conferido (`success` para o commit mesclado), com CI verde em `main`.
