@@ -30,3 +30,9 @@
 
 - A área usa as abas internas e os dois painéis de Comunicação na prática; o cartão de bolso imprime apenas a si mesmo.
 - A leitura sem contexto usa limites de palavra Unicode (o `\b` do JavaScript é ASCII e falharia em “lá”, “até”, “terça”).
+
+## Release
+
+- PR [#1](https://github.com/nenzinhu/PERSONA/pull/1) mesclado em `main` por squash (`1047abe`) em 2026-11-12.
+- CI verde no push e no pull request; CI verde também em `main` depois do merge.
+- Deploy de produção do Vercel concluído com `success` para o commit `1047abe`.
