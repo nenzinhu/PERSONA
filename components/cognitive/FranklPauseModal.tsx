@@ -4,9 +4,16 @@ interface FranklPauseProps {
   reason: string;
   onConfirm: () => void;
   onCancel: () => void;
+  /** Rótulo do botão de confirmação; o padrão é o envio à IA. */
+  confirmLabel?: string;
 }
 
-export function FranklPauseModal({ reason, onConfirm, onCancel }: FranklPauseProps) {
+export function FranklPauseModal({
+  reason,
+  onConfirm,
+  onCancel,
+  confirmLabel = "Confirmar envio à IA",
+}: FranklPauseProps) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [countdown, setCountdown] = useState(5);
 
@@ -43,7 +50,7 @@ export function FranklPauseModal({ reason, onConfirm, onCancel }: FranklPausePro
           Revisar rascunho
         </button>
         <button type="button" className="primary" disabled={countdown > 0} onClick={onConfirm}>
-          {countdown > 0 ? `Aguarde (${countdown}s)` : "Confirmar envio à IA"}
+          {countdown > 0 ? `Aguarde (${countdown}s)` : confirmLabel}
         </button>
       </div>
     </dialog>

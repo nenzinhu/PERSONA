@@ -7,6 +7,8 @@ import { profileForRequest, type AgentOutput, type StyleProfile } from "@/lib/pr
 import { MAX_SIM_TURNS, type Evaluation, type SimPerson, type SimTurn } from "@/lib/simulator";
 import type { Settings } from "@/lib/types";
 import { parseConversation } from "@/lib/whatsapp";
+import { useLocalState } from "@/lib/store";
+import { addTrainingEntry, trainingProgress, type TrainingEntry } from "@/lib/training-journal";
 
 interface Props {
   settings: Settings;
@@ -26,6 +28,8 @@ export default function Simulator({ settings, perfil, senha }: Props) {
   const [loading, setLoading] = useState<"" | "resposta" | "ajuda" | "avaliar">("");
   const [error, setError] = useState("");
   const [avaliacao, setAvaliacao] = useState<Evaluation | null>(null);
+  const [journal, setJournal] = useLocalState<TrainingEntry[]>("training-journal", []);
+  const progresso = trainingProgress(journal);
   const abortRef = useRef<AbortController | null>(null);
   const chatRef = useRef<HTMLDivElement>(null);
 
@@ -120,7 +124,21 @@ export default function Simulator({ settings, perfil, senha }: Props) {
   async function avaliar() {
     if (!historico) return;
     const data = await call((signal) => simular(historico, "avaliar", signal), "avaliar");
-    if (data) setAvaliacao({ funcionou: data.funcionou, melhorar: data.melhorar, nota: data.nota });
+    if (data) {
+      setAvaliacao({ funcionou: data.funcionou, melhorar: data.melhorar, nota: data.nota });
+      setJournal((entries) =>
+        addTrainingEntry(
+          entries,
+          {
+            date: new Date().toISOString(),
+            situacao: pessoa.situacao || pessoa.nome || "Sem situação",
+            nota: data.nota ?? null,
+            resumo: data.funcionou ?? "",
+          },
+          crypto.randomUUID(),
+        ),
+      );
+    }
   }
 
   function recomecar() {
@@ -272,6 +290,40 @@ export default function Simulator({ settings, perfil, senha }: Props) {
                 </button>
               </div>
             </div>
+            {journal.length > 0 && (
+              <section className="training-panel" aria-labelledby="training-journal-heading">
+                <h3 id="training-journal-heading">Sua jornada de treino</h3>
+                <div className="training-summary">
+                  <span>{progresso.total} ensaio(s)</span>
+                  {progresso.media !== null && <span>Média {progresso.media}/10</span>}
+                  {progresso.ultima !== null && <span>Última {progresso.ultima}/10</span>}
+                  {progresso.tendencia !== null && (
+                    <span>
+                      {progresso.tendencia > 0 ? "Subindo" : progresso.tendencia < 0 ? "Caindo" : "Estável"}{" "}
+                      {progresso.tendencia > 0 ? `+${progresso.tendencia}` : progresso.tendencia}
+                    </span>
+                  )}
+                </div>
+                <ul className="training-list">
+                  {journal.slice(0, 6).map((entry) => (
+                    <li key={entry.id}>
+                      <time dateTime={entry.date}>{new Date(entry.date).toLocaleDateString("pt-BR")}</time>
+                      <strong>{entry.situacao}</strong>
+                      {entry.nota !== null && <span>Nota {entry.nota}/10</span>}
+                    </li>
+                  ))}
+                </ul>
+                <div className="actions">
+                  <button className="act ghost" onClick={() => setJournal([])}>
+                    Limpar histórico
+                  </button>
+                </div>
+                <p className="muted small">
+                  Fica só neste navegador. A tendência compara a média dos três últimos ensaios com a dos três
+                  anteriores.
+                </p>
+              </section>
+            )}
             {avaliacao && (
               <div className="evaluation">
                 {avaliacao.nota !== null && (
