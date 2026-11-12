@@ -14,6 +14,7 @@ Next.js 15 (App Router) · sem banco de dados · deploy no Vercel.
 | **Conversa**               | Cole a conversa (ou um print) → plano, resposta, prováveis réplicas e quando mandar. Também puxa assunto.                          |
 | **Treino**                 | A IA faz o papel da outra pessoa para você ensaiar uma conversa difícil; no fim, avalia como você foi.                             |
 | **Comunicação na prática** | Ensaie uma fala, registre uma reflexão e monte informes de cumprimento de ordem de serviço com foto para compartilhar no WhatsApp. |
+| **Fora da bolha**          | Cinco ferramentas locais: pouca energia, passagem de bastão, rascunho sem contexto, acordos e cartão de bolso para imprimir.       |
 | **Meu estilo**             | Seu nome, como você escreve, exemplos reais, importação de conversa do WhatsApp e export JSONL para fine-tuning.                   |
 | **Modelos**                | Qual modelo é o mais recomendado para cada tipo de texto e quais provedores têm chave.                                             |
 
@@ -30,6 +31,16 @@ Next.js 15 (App Router) · sem banco de dados · deploy no Vercel.
 - **Ensaio de fala:** grave até 60 segundos, ouça e escolha se quer transcrever. A transcrição usa o Groq quando você pede; a revisão opcional envia somente o texto, o objetivo e a autoavaliação ao provedor escolhido. A revisão trata do conteúdo escrito e não avalia voz, sotaque ou emoção. A gravação não é salva pelo Persona.
 - **Diário:** registre manualmente o que queria alcançar, como a conversa aconteceu para você e o que tentará depois. As entradas ficam no `localStorage` deste navegador e não são enviadas à IA.
 - **Ordem de serviço:** monte um informe de início, andamento ou encerramento com identificação da OS, data/hora, local, relato, observações e foto (obrigatória para compartilhar). O texto do rascunho fica na sessão do navegador; a foto fica apenas na memória. O compartilhamento abre o menu do dispositivo para você escolher WhatsApp e o grupo. Se não houver compartilhamento de arquivos, o texto é copiado e a foto baixada para anexar manualmente. Nada é enviado sem sua confirmação.
+
+### Fora da bolha
+
+Cinco ferramentas que funcionam sem IA, no próprio navegador. Textos ficam na sessão (ou no `localStorage`, quando indicado) e nada é compartilhado automaticamente — detalhes em [docs/ideias-fora-da-bolha.md](docs/ideias-fora-da-bolha.md).
+
+- **Pouca energia:** escolha “consigo resolver agora”, “preciso de tempo” ou “não consigo assumir” e receba a frase pronta com assunto, prazo e limite. O app não cria justificativas.
+- **Passagem de bastão:** a conversa colada vira itens revisáveis (fato, dúvida ou próxima ação), cada um com o trecho de origem, mais responsável e próxima ação no cartão final.
+- **Sem contexto:** veja o rascunho isolado e quatro perguntas fixas sobre pedido, prazo, referências soltas e o que ficou em aberto.
+- **Acordos:** registre o significado combinado de expressões como “mais tarde” e confira o texto; sem acordo registrado, o app só mostra a pergunta de precisão.
+- **Cartão de bolso:** o que dizer, o que perguntar e o meu limite, em uma folha para imprimir (a impressão mostra apenas o cartão) ou copiar.
 
 ### "Parecer que fui eu"
 
@@ -168,13 +179,13 @@ A CI em `.github/workflows/ci.yml` (Node 22) executa checagem de ambiente, TypeS
 - `components/`: interface React e ações do usuário.
 - `lib/`: provedores, prompts, humanização, persistência, datasets e validação.
 - `finetune/`: treino LoRA opcional com Unsloth.
-- `tests/`: testes unitários do humanizador, WhatsApp, datasets, validação, rate limit, prompts, provedores e estado.
+- `tests/`: testes unitários do humanizador, WhatsApp, datasets, validação, rate limit, prompts, provedores, estado e das cinco ferramentas de Fora da bolha.
 
 O estado do navegador usa uma versão de schema e migrate automaticamente configurações antigas. O histórico recente de respostas também fica no `localStorage`, sem sair do dispositivo.
 
 ## Privacidade
 
-- Perfil, exemplos, configurações, histórico e diário ficam no `localStorage` do navegador; o rascunho de ordem de serviço e a senha do app ficam apenas em `sessionStorage`.
+- Perfil, exemplos, configurações, histórico, diário e acordos de expressões ficam no `localStorage` do navegador; o rascunho de ordem de serviço, a senha do app e os textos de Fora da bolha (pouca energia, passagem de bastão, sem contexto e cartão de bolso) ficam apenas em `sessionStorage`.
 - O servidor repassa o pedido ao provedor escolhido, então exemplos e contexto deixam o navegador durante a geração. Evite dados sensíveis.
 - As chaves de API e URLs privadas dos provedores não são enviadas ao frontend.
 - Evite importar conversas com dados sensíveis de terceiros e use a limpeza/anonimização antes de fazer fine-tuning.

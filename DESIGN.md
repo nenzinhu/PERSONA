@@ -111,7 +111,9 @@ A identidade combina papel claro, fundo escuro de tinta e violeta para ações e
 
 ## Layout
 
-O cabeçalho agrupa Decidir, Conversa e Na prática. Mais dá acesso a perguntas, afirmações, treino, perfil, modelos e tema. Em telas de até 720 px, a marca e a instalação ficam acima dos quatro controles de navegação. O conteúdo central tem largura máxima de 1360 px, com dois painéis quando há espaço. A área Decidir apresenta uma sequência curta de leitura, limites e revisão; contexto e rascunho usam os mesmos painéis e se empilham até 940 px. O cabeçalho expõe o acesso a Modelos com o estado real de conexão da IA. Em telas de até 720 px, esse acesso fica abaixo do título. Os demais fluxos usam seus limites existentes.
+O cabeçalho agrupa Decidir, Conversa e Na prática. Mais dá acesso a perguntas, afirmações, treino, prática fora da tela, perfil, modelos e tema. Em telas de até 720 px, a marca e a instalação ficam acima dos quatro controles de navegação. O conteúdo central tem largura máxima de 1360 px, com dois painéis quando há espaço. A área Decidir apresenta uma sequência curta de leitura, limites e revisão; contexto e rascunho usam os mesmos painéis e se empilham até 940 px. O cabeçalho expõe o acesso a Modelos com o estado real de conexão da IA. Em telas de até 720 px, esse acesso fica abaixo do título. Os demais fluxos usam seus limites existentes.
+
+A área Fora da bolha reutiliza as abas internas e os dois painéis de Comunicação na prática: à esquerda o formulário, à direita o resultado em papel claro ou monoespaçado. A impressão do cartão de bolso usa `@media print` para deixar visível apenas o cartão.
 
 ## Comportamento
 

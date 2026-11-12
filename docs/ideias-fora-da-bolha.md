@@ -1,23 +1,48 @@
-# Cinco possibilidades para o Persona
+# Fora da bolha: cinco ferramentas locais
 
-Propostas de produto, ainda não implementadas. Partem do uso pessoal e profissional descrito em PRODUCT.md.
+Implementadas na área **Fora da bolha** (`components/BeyondBubble.tsx`), com a lógica pura em `lib/` e testes em
+`tests/`. Nenhuma delas usa IA: tudo roda no navegador, e o que a pessoa escreve fica apenas na sessão do navegador
+(ou no `localStorage`, quando indicado). Nada é enviado a um provedor nem compartilhado automaticamente.
 
 ## Modo pouca energia
 
-Quando escrever parece uma tarefa grande, escolher apenas a disponibilidade real: “posso resolver agora”, “preciso de tempo” ou “não consigo assumir”. O Persona ajuda a comunicar essa capacidade sem inventar justificativas. A utilidade está em reduzir decisões em dias difíceis; não em identificar ou diagnosticar o estado emocional da pessoa.
+`lib/energy.ts` · `components/LowEnergyMode.tsx`
+
+Quando escrever parece uma tarefa grande, escolher apenas a disponibilidade real: “consigo resolver agora”, “preciso de
+tempo” ou “não consigo assumir”. O app monta a frase com o assunto, o prazo de retorno e o limite informado, sem criar
+justificativas nem inferir o estado emocional da pessoa. O texto pode ser copiado; nada é enviado.
 
 ## Passagem de bastão
 
-Transformar uma conversa longa em um cartão de continuidade: fatos confirmados, dúvidas, próximo responsável e próxima ação. Cada item mantém o trecho de origem e exige revisão. Serve para trocar de turno ou entregar uma demanda sem encaminhar toda a conversa e seus dados pessoais.
+`lib/handoff.ts` · `components/HandoffCard.tsx`
+
+A conversa colada é dividida em linhas e cada linha se torna um item revisável: fato confirmado, dúvida em aberto ou
+próxima ação. Cada item guarda o trecho de origem, pode ser reescrito e precisa da confirmação de quem escreve antes de
+virar cartão. O cartão final informa responsável, próxima ação e o lembrete de conferir com a conversa original. Nenhum
+item é classificado automaticamente como fato.
 
 ## Leitura sem contexto
 
-Mostrar uma cópia do rascunho sem o histórico e perguntar: “alguém que só recebeu este texto sabe o que fazer, até quando e o que ainda não foi combinado?”. A pessoa identifica lacunas; o sistema pode sugerir perguntas, sem prever a reação do destinatário. Ajuda especialmente quando mensagens são encaminhadas para outros grupos.
+`lib/plain-read.ts` · `components/PlainReading.tsx`
+
+Mostra o rascunho isolado, como quem só recebeu aquele texto, e responde a quatro perguntas fixas sobre o próprio texto:
+existe pedido ou ação explícita, existe prazo, existem referências que só fazem sentido com o histórico e existe algo
+declarado em aberto. As perguntas são sobre o texto, não sobre a reação do destinatário; as listas de expressões
+encontradas podem ser copiadas para revisão.
 
 ## Dicionário de acordos
 
-Registrar expressões ambíguas usadas em uma conversa — “mais tarde”, “quando der”, “está resolvido” — e o significado explicitamente combinado entre as pessoas. Ao redigir uma mensagem, destacar essas expressões e oferecer uma pergunta de precisão. O significado nunca é inferido nem apresentado como atributo permanente de alguém.
+`lib/agreements.ts` · `components/AgreementsDictionary.tsx`
 
-## Cartão de bolso para conversas presenciais
+Um dicionário local de expressões ambíguas (“mais tarde”, “quando der”, “está resolvido”…) e do significado
+explicitamente combinado. Ao conferir um texto, as expressões são destacadas com a contagem de ocorrências; quando não
+há acordo registrado, o app apenas oferece uma pergunta de precisão e não sugere sentido. Os acordos ficam no
+`localStorage` deste navegador.
 
-Preparar uma folha simples para imprimir: o que preciso dizer, o que preciso perguntar e meu limite. Funciona longe da tela, inclusive em locais sem conexão, e pode ser descartada após o encontro. O cartão usa somente texto revisado pelo usuário e não inclui nomes ou detalhes sensíveis por padrão.
+## Cartão de bolso
+
+`lib/pocket.ts` · `components/PocketCard.tsx`
+
+Uma folha com três listas curtas — o que preciso dizer, o que preciso perguntar e o meu limite — para imprimir
+(`@media print` mostra apenas o cartão) ou copiar antes de um encontro presencial. O cartão não acrescenta nomes nem
+detalhes: usa exatamente o que foi escrito e desaparece quando a aba é fechada.
